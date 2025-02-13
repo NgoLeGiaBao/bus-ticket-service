@@ -1,0 +1,6 @@
+@route_and_trip_management_service_HostAddress = http://localhost:5091
+
+GET {{route_and_trip_management_service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
