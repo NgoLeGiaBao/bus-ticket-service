@@ -1,6 +1,6 @@
 
 using Microsoft.EntityFrameworkCore;
-using route_and_trip_management_service.Models;
+using route_and_trip_management_service.Models.Entity;
 
 namespace route_and_trip_management_service
 {
