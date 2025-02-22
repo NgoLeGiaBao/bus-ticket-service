@@ -11,12 +11,13 @@ namespace route_and_trip_management_service.Models.Entity {
         [Required]
         public Guid RouteID { get; set; }
         [ForeignKey("RouteID")]
-        public required Route Route { get; set; }
+        public Route? Route { get; set; } 
         public DateTime DepartureDateTime  { get; set; }
         public DateTime ArrivalDateTime  { get; set; }
         public BusType Type { get; set; } 
         public decimal TicketPrice { get; set; }
         [MaxLength(255)]
         public required string RouteDirection  { get; set; }
+        public TripStatusType Status { get; set; } = TripStatusType.WaitingForDeparture;
     }
 }

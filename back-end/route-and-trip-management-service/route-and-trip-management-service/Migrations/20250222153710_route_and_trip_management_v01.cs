@@ -38,7 +38,8 @@ namespace route_and_trip_management_service.Migrations
                     ArrivalDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     TicketPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    RouteDirection = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
+                    RouteDirection = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {

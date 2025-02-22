@@ -12,7 +12,7 @@ using route_and_trip_management_service.Models.Entity;
 namespace route_and_trip_management_service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250222092759_route_and_trip_management_v01")]
+    [Migration("20250222153710_route_and_trip_management_v01")]
     partial class route_and_trip_management_v01
     {
         /// <inheritdoc />
@@ -82,6 +82,9 @@ namespace route_and_trip_management_service.Migrations
 
                     b.Property<Guid>("RouteID")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TicketPrice")
                         .HasColumnType("decimal(18,2)");

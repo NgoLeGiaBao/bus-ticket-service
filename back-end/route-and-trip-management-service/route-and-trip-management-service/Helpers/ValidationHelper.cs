@@ -34,7 +34,6 @@ namespace route_and_trip_management_service.Helpers
                     errors.Add(field, $"{field} cannot be empty.");
                 }
             }
-
             return errors;
         }
     }

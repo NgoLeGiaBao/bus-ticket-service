@@ -80,6 +80,9 @@ namespace route_and_trip_management_service.Migrations
                     b.Property<Guid>("RouteID")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TicketPrice")
                         .HasColumnType("decimal(18,2)");
 

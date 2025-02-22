@@ -45,6 +45,7 @@ namespace route_and_trip_management_service.Controllers {
             }
         }
 
+
         /// <summary>
         /// Check if a route with the given StartPoint and EndPoint exists (bi-directional check).
         /// </summary>
@@ -72,6 +73,7 @@ namespace route_and_trip_management_service.Controllers {
                 return StatusCode(500, ApiResponse<object>.ErrorResponse("An error occurred while processing the request"));
             }
         }
+
 
         /// <summary>
         /// Creates a new route and saves it to the database.
@@ -117,6 +119,8 @@ namespace route_and_trip_management_service.Controllers {
             }
         }
     
+
+
         /// <summary>
         /// Updates an existing route based on the provided route ID.
         /// </summary>
@@ -157,5 +161,4 @@ namespace route_and_trip_management_service.Controllers {
             }
         }
     }
-
 }

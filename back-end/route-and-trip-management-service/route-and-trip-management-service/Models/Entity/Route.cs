@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace route_and_trip_management_service.Models.Entity {
     public class Route {
@@ -14,6 +15,7 @@ namespace route_and_trip_management_service.Models.Entity {
         public required string EndPoint { get; set; }
         public double Distance { get; set; }
         public required string EstimatedDuration  { get; set; }
+        [JsonIgnore]  
         public ICollection<Trip>? Trips { get; set; }
         [Required]
         public required string BelongsToProvinceID { get; set; }
