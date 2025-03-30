@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "nHNc9M0P5C8Sak46WlG5AZMT2nGJmB6CLoGkSn9RK10=",
+  "Source": "user-management-service",
+  "BasePath": "_content/user-management-service",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

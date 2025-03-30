@@ -1,0 +1,150 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\models\\enums\\bustype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\models\\enums\\bustype.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\dto\\busstationdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\dto\\busstationdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\models\\busstation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\models\\busstation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\controllers\\busstationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\controllers\\busstationcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|d:\\enterprise service-oriented architecture\\final project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\models\\vehicle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{329F22C6-9C92-45C0-AE9D-16856EDCBEC5}|route-and-trip-management-service\\route-and-trip-management-service.csproj|solutionrelative:route-and-trip-management-service\\models\\vehicle.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 157,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{e8b06f52-6d01-11d2-aa7d-00c04f990343}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BusType.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\Enums\\BusType.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\Models\\Enums\\BusType.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\Enums\\BusType.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\Models\\Enums\\BusType.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-22T04:12:24.667Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\appsettings.json",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\appsettings.json",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\appsettings.json",
+              "RelativeToolTip": "route-and-trip-management-service\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-02-21T16:06:05.784Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "BusStation.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\BusStation.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\Models\\BusStation.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\BusStation.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\Models\\BusStation.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAoAAAAyAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-13T16:33:03.273Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BusStationDTO.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\DTO\\BusStationDTO.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\DTO\\BusStationDTO.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\DTO\\BusStationDTO.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\DTO\\BusStationDTO.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAyAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-13T16:33:00.409Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "BusStationController.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Controllers\\BusStationController.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\Controllers\\BusStationController.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Controllers\\BusStationController.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\Controllers\\BusStationController.cs",
+              "ViewState": "AQIAAAgAAAAAAAAAAAA3wGQAAAABAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-13T16:07:15.53Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Vehicle.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\Vehicle.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\Models\\Vehicle.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Models\\Vehicle.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\Models\\Vehicle.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-13T16:34:33.234Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Program.cs",
+              "RelativeDocumentMoniker": "route-and-trip-management-service\\Program.cs",
+              "ToolTip": "D:\\Enterprise Service-Oriented Architecture\\Final Project\\bus-ticket-service\\back-end\\route-and-trip-management-service\\route-and-trip-management-service\\Program.cs",
+              "RelativeToolTip": "route-and-trip-management-service\\Program.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABkAAAAPAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-02-13T10:27:54.318Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

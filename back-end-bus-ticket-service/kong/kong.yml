@@ -1,0 +1,17 @@
+_format_version: "3.0"
+
+services:
+  - name: user-management-service
+    url: http://user-management-service:5000
+    routes:
+      - name: user-management-route
+        paths:
+          - /auth
+          - /users
+
+  - name: staff-dispatch-service
+    url: http://staff-dispatch-service:8002
+    routes:
+      - name: staff-dispatch-route
+        paths:
+          - /dispatch
