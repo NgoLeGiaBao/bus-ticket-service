@@ -12,7 +12,7 @@ using user_management_service.data;
 namespace user_management_service.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250331143844_User_Management_V01")]
+    [Migration("20250331193105_User_Management_V01")]
     partial class User_Management_V01
     {
         /// <inheritdoc />
@@ -120,7 +120,6 @@ namespace user_management_service.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<bool>("IsActive")
@@ -172,6 +171,21 @@ namespace user_management_service.Migrations
                     b.ToTable("UserActivityLogs");
                 });
 
+            modelBuilder.Entity("user_management_service.models.UserRole", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
+                });
+
             modelBuilder.Entity("RoleUser", b =>
                 {
                     b.HasOne("user_management_service.models.Role", null)
@@ -220,9 +234,35 @@ namespace user_management_service.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("user_management_service.models.UserRole", b =>
+                {
+                    b.HasOne("user_management_service.models.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("user_management_service.models.User", "User")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("user_management_service.models.Role", b =>
+                {
+                    b.Navigation("UserRoles");
+                });
+
             modelBuilder.Entity("user_management_service.models.User", b =>
                 {
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

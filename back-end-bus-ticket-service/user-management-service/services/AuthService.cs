@@ -108,5 +108,6 @@ namespace user_management_service.services {
 
             return refreshToken.Token;
         }
+    
     }
 }

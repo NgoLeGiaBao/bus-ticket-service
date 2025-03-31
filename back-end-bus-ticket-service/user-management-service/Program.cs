@@ -45,12 +45,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Inject services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleService>();
 
+
+// Add services to the container.
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
 
-// ✅ Configure Swagger with JWT Authentication
+// Configuration Swagger
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "User Management API", Version = "v1" });
@@ -82,7 +86,7 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// ✅ Middleware setup
+// Middleware
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -95,33 +99,33 @@ app.MapControllers();
 
 app.MapGet("/", () => "Hello, World!");
 
-// ✅ API to generate JWT Token
-app.MapPost("/generate-token", (UserLogin user) =>
-{
-    if (user.Username != "admin" || user.Password != "password123")
-        return Results.Unauthorized();
+// // ✅ API to generate JWT Token
+// app.MapPost("/generate-token", (UserLogin user) =>
+// {
+//     if (user.Username != "admin" || user.Password != "password123")
+//         return Results.Unauthorized();
 
-    var claims = new[]
-    {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-    };
+//     var claims = new[]
+//     {
+//         new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+//         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+//     };
 
-    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-    var token = new JwtSecurityToken(issuer, audience, claims, expires: DateTime.UtcNow.AddHours(1), signingCredentials: creds);
+//     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+//     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+//     var token = new JwtSecurityToken(issuer, audience, claims, expires: DateTime.UtcNow.AddHours(1), signingCredentials: creds);
 
-    return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
-});
+//     return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
+// });
 
-// ✅ Protected API that requires JWT
-app.MapGet("/secure-data", (ClaimsPrincipal user) =>
-{
-    var username = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    return Results.Ok(new { message = "This is a protected API", user = username });
-}).RequireAuthorization();
+// // ✅ Protected API that requires JWT
+// app.MapGet("/secure-data", (ClaimsPrincipal user) =>
+// {
+//     var username = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+//     return Results.Ok(new { message = "This is a protected API", user = username });
+// }).RequireAuthorization();
 
 app.Run();
 
 // ✅ Define UserLogin model
-public record UserLogin(string Username, string Password);
+// public record UserLogin(string Username, string Password);

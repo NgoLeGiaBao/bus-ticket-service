@@ -20,5 +20,7 @@ namespace user_management_service.models {
         public DateTime? UpdatedAt { get; set; }
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
         public ICollection<Role> Roles { get; set; } = new List<Role>();
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
 }
 }

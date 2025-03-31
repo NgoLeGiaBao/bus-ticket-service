@@ -16,7 +16,7 @@ namespace  user_management_service.controllers
         {
             _authService = authService;
         }
-
+        
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -37,5 +37,6 @@ namespace  user_management_service.controllers
             var response = await _authService.RefreshToken(request);
             return response.Success ? Ok(response) : Unauthorized(response);
         }
+    
     }      
 }

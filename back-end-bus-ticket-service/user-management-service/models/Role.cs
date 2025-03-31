@@ -9,5 +9,7 @@ namespace user_management_service.models
         [Required]
         public string Name { get; set; } 
         public ICollection<User> Users { get; set; } = new List<User>();
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+
     }
 }
