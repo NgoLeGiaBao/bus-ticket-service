@@ -1,42 +1,41 @@
 using Microsoft.AspNetCore.Mvc;
 
-[ApiController]
-[Route("auth")]
-public class AuthController : ControllerBase
-{
-    [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginRequest request)
-    {
-        if (request.Username == "admin" && request.Password == "password")
-        {
-            var token = JwtService.GenerateToken(request.Username, "admin");
-            return Ok(new { token });
-        }
-        return Unauthorized();
-    }
+using user_management_service.dtos;
+using user_management_service.services;
 
-    [HttpGet("public-key")]
-    [Produces("text/plain")] 
-    public IActionResult GetPublicKey()
-    {
-        try 
-        {
-            return Content(JwtService.GetPublicKeyPem());
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"Error generating public key: {ex.Message}");
-        }
-    }
-    
-    [HttpGet("health")]
-    public IActionResult HealthCheck()
-    {
-        return Ok("Service is healthy");
-    }
-}
-public class LoginRequest
+namespace  user_management_service.controllers
 {
-    public string Username { get; set; }
-    public string Password { get; set; }
+    
+    [Route("auth")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly AuthService _authService;
+
+        public AuthController(AuthService authService)
+        {
+            _authService = authService;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            var response = await _authService.Register(request);
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            var response = await _authService.Login(request);
+            return response.Success ? Ok(response) : Unauthorized(response);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var response = await _authService.RefreshToken(request);
+            return response.Success ? Ok(response) : Unauthorized(response);
+        }
+    }      
 }

@@ -1,21 +1,29 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using user_management_service.data;
+using user_management_service.services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Cấu hình Kestrel
+// Configuration kestrel
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(5000);
 });
 
-// 🔑 Cấu hình JWT
-var secretKey = "m4uZQ!xvC@8yB#zQ@5L9&WfK$MnP3tG#";
-var issuer = "myapp.com";
-var audience = "myapp_users";
+// Configuration Database
+builder.Services.AddDbContext<UserDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure JWT Authentication
+var secretKey = builder.Configuration["JwtSettings:Secret"] ?? "";
+var issuer = builder.Configuration["JwtSettings:Issuer"] ?? "";
+var audience = builder.Configuration["JwtSettings:Audience"] ?? "";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -35,26 +43,59 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Inject services
+builder.Services.AddScoped<AuthService>();
+
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
+
+// ✅ Configure Swagger with JWT Authentication
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "User Management API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer {token}'",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] { }
+        }
+    });
+});
 
 var app = builder.Build();
 
-// ✅ Middleware
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
+// ✅ Middleware setup
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+app.UseHttpsRedirection();
 app.MapControllers();
 
-// ✅ API tạo JWT Token
+app.MapGet("/", () => "Hello, World!");
+
+// ✅ API to generate JWT Token
 app.MapPost("/generate-token", (UserLogin user) =>
 {
     if (user.Username != "admin" || user.Password != "password123")
@@ -62,7 +103,7 @@ app.MapPost("/generate-token", (UserLogin user) =>
 
     var claims = new[]
     {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Username), // ✅ Đảm bảo có sub
+        new Claim(JwtRegisteredClaimNames.Sub, user.Username),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
     };
 
@@ -73,14 +114,14 @@ app.MapPost("/generate-token", (UserLogin user) =>
     return Results.Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
 });
 
-// ✅ API yêu cầu JWT
+// ✅ Protected API that requires JWT
 app.MapGet("/secure-data", (ClaimsPrincipal user) =>
 {
-    var username = user.FindFirst(ClaimTypes.NameIdentifier)?.Value; // ✅ Lấy username từ token
+    var username = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     return Results.Ok(new { message = "This is a protected API", user = username });
 }).RequireAuthorization();
 
 app.Run();
 
-// ✅ Định nghĩa UserLogin
+// ✅ Define UserLogin model
 public record UserLogin(string Username, string Password);

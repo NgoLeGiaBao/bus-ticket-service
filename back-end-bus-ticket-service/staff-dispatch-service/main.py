@@ -8,8 +8,8 @@ security = HTTPBearer()
 # 🔑 Cấu hình JWT giống ASP.NET Core
 SECRET_KEY = "m4uZQ!xvC@8yB#zQ@5L9&WfK$MnP3tG#"
 ALGORITHM = "HS256"
-ISSUER = "myapp.com"
-AUDIENCE = "myapp_users"
+ISSUER = "bus-ticket-auth-service"
+AUDIENCE = "bus-ticket-users"
 
 # ✅ Hàm xác thực token
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
