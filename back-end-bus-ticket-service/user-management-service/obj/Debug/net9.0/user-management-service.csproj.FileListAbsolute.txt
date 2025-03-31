@@ -40,3 +40,6 @@ D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\bac
 D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\obj\Debug\net9.0\user-management-service.pdb
 D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\obj\Debug\net9.0\user-management-service.genruntimeconfig.cache
 D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\obj\Debug\net9.0\ref\user-management-service.dll
+D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\bin\Debug\net9.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.dll
+D:\Enterprise Service-Oriented Architecture\Final Project\bus-ticket-service\back-end-bus-ticket-service\user-management-service\bin\Debug\net9.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll

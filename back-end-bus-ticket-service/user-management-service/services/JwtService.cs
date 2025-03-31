@@ -1,3 +1,4 @@
+// JwtService.cs
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -36,7 +37,7 @@ public static class JwtService
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return tokenHandler.WriteToken(token); // Convert SecurityToken to string
+        return tokenHandler.WriteToken(token);
     }
 
     public static string GetPublicKeyPem()

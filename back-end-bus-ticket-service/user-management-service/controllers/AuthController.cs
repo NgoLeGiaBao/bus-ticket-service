@@ -16,12 +16,25 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("public-key")]
+    [Produces("text/plain")] 
     public IActionResult GetPublicKey()
     {
-        return Ok(new { publicKey = JwtService.GetPublicKeyPem() });
+        try 
+        {
+            return Content(JwtService.GetPublicKeyPem());
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error generating public key: {ex.Message}");
+        }
+    }
+    
+    [HttpGet("health")]
+    public IActionResult HealthCheck()
+    {
+        return Ok("Service is healthy");
     }
 }
-
 public class LoginRequest
 {
     public string Username { get; set; }
