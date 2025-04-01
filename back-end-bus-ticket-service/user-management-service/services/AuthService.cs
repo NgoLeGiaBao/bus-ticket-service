@@ -44,14 +44,46 @@ namespace user_management_service.services {
 
         public async Task<ApiResponse<AuthResponse>> Login(LoginRequest request)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.PhoneNumber || u.PhoneNumber == request.PhoneNumber);
+            var user = await _context.Users
+                .Where(u => u.PhoneNumber == request.PhoneNumber)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 return new ApiResponse<AuthResponse>(false, "Invalid email or password", null, "Unauthorized");
 
-            var token = GenerateJwtToken(user);
+            // Get user roles
+            var roleNames = user.UserRoles
+                .Select(ur => ur.Role.Name)
+                .ToList();
+
+            var token = GenerateJwtToken(user, roleNames);
             var refreshToken = GenerateRefreshToken(user.Id);
 
-            return new ApiResponse<AuthResponse>(true, "Login successful", new AuthResponse {User = user, AccessToken = token, RefreshToken = refreshToken }, null);
+            return new ApiResponse<AuthResponse>(true, "Login successful", new AuthResponse
+            {
+                User = user,
+                AccessToken = token,
+                RefreshToken = refreshToken,
+                Roles = roleNames
+            }, null);
+        }
+
+        public async Task<ApiResponse<string>> LogoutAsync(Guid userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return new ApiResponse<string>(false, "User not found.", null, "UserNotFound");
+            
+            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(rt => rt.UserId == userId);
+            if (refreshToken != null)
+            {
+                _context.RefreshTokens.Remove(refreshToken);
+                await _context.SaveChangesAsync();
+            }
+            return new ApiResponse<string>(true, "Logout successful.", null, null);
         }
 
         public async Task<ApiResponse<AuthResponse>> RefreshToken(RefreshTokenRequest request)
@@ -59,11 +91,17 @@ namespace user_management_service.services {
             var refreshToken = await _context.RefreshTokens
                 .FirstOrDefaultAsync(rt => rt.Token == request.Token && !rt.Revoked);
 
-            if (refreshToken == null || refreshToken.ExpiresAt < DateTime.UtcNow.AddHours(7))
+            if (refreshToken == null || refreshToken.ExpiresAt < DateTime.UtcNow)
                 return new ApiResponse<AuthResponse>(false, "Invalid or expired refresh token", null, "Unauthorized");
 
-            var user = await _context.Users.FindAsync(refreshToken.UserId);
-            var newAccessToken = GenerateJwtToken(user);
+            var user = await _context.Users
+                .Include(u => u.UserRoles)  
+                    .ThenInclude(ur => ur.Role)  
+                .FirstOrDefaultAsync(u => u.Id == refreshToken.UserId);
+
+            var roleNames = user?.UserRoles.Select(ur => ur.Role.Name).ToList();
+
+            var newAccessToken = GenerateJwtToken(user, roleNames);
             var newRefreshToken = GenerateRefreshToken(user.Id);
 
             refreshToken.Revoked = true;
@@ -72,24 +110,35 @@ namespace user_management_service.services {
             return new ApiResponse<AuthResponse>(true, "Token refreshed successfully", new AuthResponse { AccessToken = newAccessToken, RefreshToken = newRefreshToken }, null);
         }
 
-        private string GenerateJwtToken(User user)
+        private string GenerateJwtToken(User user, List<string> roles = null)
         {
             var key = Encoding.UTF8.GetBytes(_configuration["JwtSettings:Secret"]);
             var tokenHandler = new JwtSecurityTokenHandler();
+
+            // Create claims from user
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, user.Username),
+                new Claim("phone", user.PhoneNumber),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            
+            if (roles != null && roles.Any())
+            {
+                claims.AddRange(roles.Select(role => new Claim("role", role)));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                    new Claim("phone", user.PhoneNumber),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) 
-                }),
+                Subject = new ClaimsIdentity(claims),  
                 Issuer = _configuration["JwtSettings:Issuer"], 
                 Audience = _configuration["JwtSettings:Audience"], 
-                Expires = DateTime.UtcNow.AddHours(7).AddMinutes(Convert.ToInt32(_configuration["JwtSettings:AccessTokenExpiryMinutes"])),
+                Expires = DateTime.UtcNow.AddMinutes(Convert.ToInt32(_configuration["JwtSettings:AccessTokenExpiryMinutes"])),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
             };
+
             return tokenHandler.WriteToken(tokenHandler.CreateToken(tokenDescriptor));
         }
 
@@ -100,7 +149,7 @@ namespace user_management_service.services {
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Token = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
-                ExpiresAt = DateTime.UtcNow.AddHours(7).AddDays(Convert.ToInt32(_configuration["JwtSettings:RefreshTokenExpiryDays"]))
+                ExpiresAt = DateTime.UtcNow.AddDays(Convert.ToInt32(_configuration["JwtSettings:RefreshTokenExpiryDays"]))
             };
 
             _context.RefreshTokens.Add(refreshToken);

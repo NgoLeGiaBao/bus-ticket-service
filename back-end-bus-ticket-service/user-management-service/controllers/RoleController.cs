@@ -21,36 +21,42 @@ namespace user_management_service.controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetRoles()
         {
             return await _roleService.GetAllRolesAsync();
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
         {
             return await _roleService.CreateRoleAsync(request);
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateRole(Guid id, [FromBody] UpdateRoleRequest request)
         {
             return await _roleService.UpdateRoleAsync(id, request);
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteRole(Guid id)
         {
             return await _roleService.DeleteRoleAsync(id);
         }
 
         [HttpPost("assign/{userId}/{roleId}")]
+        [Authorize(Roles = "Admin,Manager")] 
         public async Task<IActionResult> AssignRoleToUser(Guid userId, Guid roleId)
         {
             return await _roleService.AssignRoleToUserAsync(userId, roleId);
         }
 
         [HttpDelete("remove/{userId}/{roleId}")]
+        [Authorize(Roles = "Admin,Manager")] 
         public async Task<IActionResult> RemoveRoleFromUser(Guid userId, Guid roleId)
         {
             return await _roleService.RemoveRoleFromUserAsync(userId, roleId);

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace user_management_service.models {
     public class User
@@ -19,7 +20,9 @@ namespace user_management_service.models {
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow.AddHours(7);
         public DateTime? UpdatedAt { get; set; }
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+        [JsonIgnore]
         public ICollection<Role> Roles { get; set; } = new List<Role>();
+         [JsonIgnore]
         public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 
 }

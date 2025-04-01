@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 using user_management_service.dtos;
 using user_management_service.services;
@@ -29,6 +31,19 @@ namespace  user_management_service.controllers
         {
             var response = await _authService.Login(request);
             return response.Success ? Ok(response) : Unauthorized(response);
+        }
+
+        [HttpPost("logout")]
+        [Authorize] 
+        public async Task<IActionResult> Logout()
+        {
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var response = await _authService.LogoutAsync(userId);
+    
+            if (!response.Success)
+                return BadRequest(response);
+    
+            return Ok(response);
         }
 
         [HttpPost("refresh-token")]
