@@ -1,0 +1,69 @@
+const supabase = require('../supabase');
+
+// Create a new trip
+const createTripService = async (tripDate, availableSeats, routeId) => {
+    const { data, error } = await supabase.from('trips').insert([
+        {
+            trip_date: tripDate,
+            available_seats: availableSeats,
+            route_id: routeId,
+        }
+    ]);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+// Get all trips
+const getTripsService = async () => {
+    const { data, error } = await supabase.from('trips').select('*, routes(*)');
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+// Get a specific trip by ID
+const getTripByIdService = async (id) => {
+    const { data, error } = await supabase.from('trips').select('*, routes(*)').eq('id', id).single();
+    
+    if (error || !data) {
+        throw new Error('Trip not found');
+    }
+
+    return data;
+};
+
+// Update an existing trip
+const updateTripService = async (id, updates) => {
+    const { data, error } = await supabase.from('trips').update(updates).eq('id', id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+// Delete a trip by ID
+const deleteTripService = async (id) => {
+    const { data, error } = await supabase.from('trips').delete().eq('id', id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+module.exports = {
+    createTripService,
+    getTripsService,
+    getTripByIdService,
+    updateTripService,
+    deleteTripService
+};
