@@ -1,17 +1,24 @@
 _format_version: "3.0"
+_transform: true
 
 services:
   - name: user-management-service
-    url: http://user-management-service:5000
+    url: http://user-management-service:9000
     routes:
       - name: user-management-route
-        paths:
+        paths: 
           - /auth
           - /users
+        methods: [GET, POST, PUT, DELETE]
+        strip_path: true
+        preserve_host: false
 
   - name: staff-dispatch-service
-    url: http://staff-dispatch-service:8002
+    url: http://staff-dispatch-service:9001
     routes:
       - name: staff-dispatch-route
         paths:
           - /dispatch
+        methods: [GET, POST, PUT, DELETE]
+        strip_path: true
+        preserve_host: false
