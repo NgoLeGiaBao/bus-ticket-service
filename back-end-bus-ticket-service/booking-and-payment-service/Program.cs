@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 
 using booking_and_payment_service.data;
 using booking_and_payment_service.services;
+using  booking_and_payment_service.background_services;
 using booking_and_payment_service.services.payment;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,7 +79,8 @@ builder.Services.AddScoped<BookingService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<RedisService>();
 
-
+// Background service
+builder.Services.AddHostedService<BookingExpirationListener>();
 
 // Add services to the container.
 builder.Services.AddAuthorization();
