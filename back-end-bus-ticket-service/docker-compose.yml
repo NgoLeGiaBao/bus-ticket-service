@@ -20,12 +20,11 @@ services:
       - "8444:8444"   
     networks:
       - kong-network
-
   user-management-service:
     build: ./user-management-service
     container_name: user-management-service
     ports:
-      - "9000:9000"
+      - "9500:9500"
     networks:
       - kong-network
 
@@ -33,7 +32,17 @@ services:
     build: ./staff-dispatch-service
     container_name: staff-dispatch-service
     ports:
-      - "9001:9001"
+      - "9501:9501"
+    networks:
+      - kong-network
+  
+  route-trip-management-service:
+    build: ./route-trip-management-service
+    container_name: route-trip-management-service
+    ports:
+      - "9502:9502"
+    env_file:
+      - ./route-trip-management-service/.env
     networks:
       - kong-network
 
@@ -42,6 +51,18 @@ services:
     container_name: redis-server
     ports:
       - "6379:6379"
+    networks:
+      - kong-network
+  
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq-bus
+    ports:
+      - "5673:5672"    
+      - "15673:15672"  
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
     networks:
       - kong-network
 

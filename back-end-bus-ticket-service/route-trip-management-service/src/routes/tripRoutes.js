@@ -8,10 +8,10 @@ const router = express.Router();
 router.post('/trips', verifyToken, verifyRole('Admin'), TripController.createTripController);
 
 // Get all trips
-router.get('/trips', verifyToken, TripController.getTripsController);
+router.get('/trips', TripController.getTripsController);
 
 // Get a trip by ID
-router.get('/trips/:id', verifyToken, TripController.getTripByIdController);
+router.get('/trips/:id', TripController.getTripByIdController);
 
 // Update a trip (Admin only)
 router.put('/trips/:id', verifyToken, verifyRole('Admin'), TripController.updateTripController);

@@ -8,7 +8,7 @@ const router = express.Router();
 router.post('/routes', verifyToken, verifyRole('Admin'), RouteController.createRouteController);
 
 // Get all routes
-router.get('/routes', verifyToken, RouteController.getRoutesController);
+router.get('/routes', RouteController.getRoutesController);
 
 // Get a route by ID
 router.get('/routes/:id', verifyToken, RouteController.getRouteByIdController);

@@ -5,7 +5,7 @@ USER root
 RUN apk add --no-cache <any-required-packages>
 USER kong
 
-# Copy custom plugins (if any)
+# Copy custom plugins
 COPY ./plugins /usr/local/kong/plugins/
 
 # Copy declarative configuration

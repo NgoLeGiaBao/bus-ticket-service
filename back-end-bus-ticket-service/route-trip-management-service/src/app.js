@@ -8,4 +8,4 @@ app.use(express.json());
 app.use('/api', routeRoutes);
 app.use('/api', tripRoutes);
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(9502, () => console.log('Server running on port 9502'));

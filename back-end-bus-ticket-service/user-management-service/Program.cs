@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configuration kestrel
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(9000);
+    options.ListenAnyIP(9500);
 });
 
 // Configuration Database

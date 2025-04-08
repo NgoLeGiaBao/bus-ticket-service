@@ -3,7 +3,7 @@ _transform: true
 
 services:
   - name: user-management-service
-    url: http://user-management-service:9000
+    url: http://user-management-service:9500
     routes:
       - name: user-management-route
         paths: 
@@ -14,11 +14,21 @@ services:
         preserve_host: false
 
   - name: staff-dispatch-service
-    url: http://staff-dispatch-service:9001
+    url: http://staff-dispatch-service:9501
     routes:
       - name: staff-dispatch-route
         paths:
           - /dispatch
+        methods: [GET, POST, PUT, DELETE]
+        strip_path: true
+        preserve_host: false
+
+  - name: route-trip-management-service
+    url: http://route-trip-management-service:9502
+    routes:
+      - name: route-trip-management-route
+        paths:
+          - /trip
         methods: [GET, POST, PUT, DELETE]
         strip_path: true
         preserve_host: false
