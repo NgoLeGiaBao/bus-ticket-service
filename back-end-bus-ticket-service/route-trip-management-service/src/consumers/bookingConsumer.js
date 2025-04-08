@@ -3,7 +3,7 @@ const tripService = require('../services/tripService');
 
 async function bookingConsumer() {
   try {
-    const connection = await amqp.connect("amqp://admin:admin@localhost:5673");
+    const connection = await amqp.connect("amqp://admin:admin@rabbitmq-bus:5672");
     const channel = await connection.createChannel();
     const queue = "booking.route.created";
 
