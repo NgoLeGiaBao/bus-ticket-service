@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\components",
+    "\\src\\components\\Header",
+    "\\src\\components\\Sidebar",
+    "\\src\\layout"
+  ],
+  "SelectedNode": "\\src\\components\\Header\\DarkModeSwitcher.tsx",
+  "PreviewInSolutionExplorer": false
+}
