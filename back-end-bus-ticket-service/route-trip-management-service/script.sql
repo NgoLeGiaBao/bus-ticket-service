@@ -15,3 +15,12 @@ CREATE TABLE trips (
     available_seats INT NOT NULL,         
     route_id UUID REFERENCES routes(id) ON DELETE CASCADE 
 );
+
+ALTER TABLE trips
+ADD COLUMN booked_seats TEXT[] DEFAULT '{}';
+
+-- Create enum
+CREATE TYPE vehicle_type_enum AS ENUM ('limousine', 'sleeper', 'standard');
+-- Add column
+ALTER TABLE trips
+ADD COLUMN vehicle_type vehicle_type_enum NOT NULL DEFAULT 'standard';

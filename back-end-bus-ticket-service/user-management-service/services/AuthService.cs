@@ -45,14 +45,17 @@ namespace user_management_service.services {
         public async Task<ApiResponse<AuthResponse>> Login(LoginRequest request)
         {
             var user = await _context.Users
-                .Where(u => u.PhoneNumber == request.PhoneNumber)
+                .Where(u => u.PhoneNumber == request.PhoneNumber && u.IsActive == true)
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                return new ApiResponse<AuthResponse>(false, "Invalid email or password", null, "Unauthorized");
+            if (user == null) 
+                return new ApiResponse<AuthResponse>(false, "Phone number not found or inactive", null, "Unauthorized");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                return new ApiResponse<AuthResponse>(false, "Invalid password", null, "Unauthorized");
 
             // Get user roles
             var roleNames = user.UserRoles
