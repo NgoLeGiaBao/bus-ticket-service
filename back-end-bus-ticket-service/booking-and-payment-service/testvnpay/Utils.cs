@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace webbanxe.Payments
+namespace testvnpay.Payments
 {
     public static class HashAndGetIP
     {

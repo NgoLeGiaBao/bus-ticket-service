@@ -2,7 +2,7 @@ using booking_and_payment_service.dtos;
 using booking_and_payment_service.responses;
 using booking_and_payment_service.services;
 using Microsoft.AspNetCore.Mvc;
-using webbanxe.Payments;
+using testvnpay.Payments;
 using Microsoft.AspNetCore.Http;
 
 namespace booking_and_payment_service.controllers
@@ -66,7 +66,7 @@ namespace booking_and_payment_service.controllers
             return StatusCode(result.Success ? 200 : 404, result);
         }
 
-                // Updated route to use route parameters
+        // Updated route to use route parameters
         [HttpPost("vnpay-url-2")]
         public async Task<IActionResult> CreateVNPayUrl() // Get language from route
         {
@@ -80,12 +80,13 @@ namespace booking_and_payment_service.controllers
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
             vnpay.AddRequestData("vnp_TmnCode", vnpTmnCode);
-            vnpay.AddRequestData("vnp_Amount", (100 * 10000).ToString()); //Số tiền thanh toán. Số tiền không mang các ký tự phân tách thập phân, phần nghìn, ký tự tiền tệ. Để gửi số tiền thanh toán là 100,000 VND (một trăm nghìn VNĐ) thì merchant cần nhân thêm 100 lần (khử phần thập phân), sau đó gửi sang VNPAY là: 10000000
+            vnpay.AddRequestData("vnp_BankCode", "NCB");
+            vnpay.AddRequestData("vnp_Amount", (100 * 10000).ToString()); 
             vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_CurrCode", "VND");
             vnpay.AddRequestData("vnp_Locale", "vn");
-            vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan don hang:");
-            vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
+            vnpay.AddRequestData("vnp_OrderInfo", "=Payment:");
+            vnpay.AddRequestData("vnp_OrderType", "other"); 
             vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_ReturnUrl", vnpReturnUrl);
             vnpay.AddRequestData("vnp_IpAddr", "127.0.0.1");
