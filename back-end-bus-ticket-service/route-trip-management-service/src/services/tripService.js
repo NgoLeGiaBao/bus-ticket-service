@@ -60,10 +60,34 @@ const deleteTripService = async (id) => {
     return data;
 };
 
+// Add booked seats to a trip
+const addBookedSeats = async (tripId, newSeats) => {
+  // Fetch current booked seats
+  const { data: trip, error: getError } = await supabase
+    .from('trips')
+    .select('booked_seats')
+    .eq('id', tripId)
+    .single();
+
+  if (getError) throw new Error(getError.message);
+
+  const updatedSeats = [...trip.booked_seats, ...newSeats];
+
+  // Update booked_seats column
+  const { data, error } = await supabase
+    .from('trips')
+    .update({ booked_seats: updatedSeats })
+    .eq('id', tripId);
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 module.exports = {
     createTripService,
     getTripsService,
     getTripByIdService,
     updateTripService,
-    deleteTripService
+    deleteTripService,
+    addBookedSeats
 };

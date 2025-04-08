@@ -4,7 +4,8 @@
   "description": "",
   "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/app.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "amqplib": "^0.10.7",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-simple": "^0.5.6",

@@ -7,13 +7,16 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http;
-
+using RabbitMQ.Client;
 
 using booking_and_payment_service.data;
 using booking_and_payment_service.services;
 using  booking_and_payment_service.background_services;
 using booking_and_payment_service.services.payment;
+using booking_and_payment_service.rabbitmq.Messaging;
+using booking_and_payment_service.rabbitmq.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +89,22 @@ builder.Services.AddHostedService<BookingExpirationListener>();
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers();
+
+builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQ"));
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value;
+    var factory = new ConnectionFactory
+    {
+        HostName = config.HostName,
+        UserName = config.UserName,
+        Password = config.Password,
+        Port = config.Port
+    };
+    return factory.CreateConnection();
+});
+
+builder.Services.AddSingleton<IMessagePublisher, RabbitMQMessagePublisher>();
 
 // Configuration Swagger
 builder.Services.AddSwaggerGen(options =>

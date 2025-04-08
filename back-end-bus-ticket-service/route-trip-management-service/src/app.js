@@ -1,6 +1,9 @@
 const express = require('express');
 const routeRoutes = require('./routes/routeRoutes');
 const tripRoutes = require('./routes/tripRoutes');
+const bookingConsumer = require("./consumers/bookingConsumer");
+bookingConsumer();
+
 
 const app = express();
 app.use(express.json());

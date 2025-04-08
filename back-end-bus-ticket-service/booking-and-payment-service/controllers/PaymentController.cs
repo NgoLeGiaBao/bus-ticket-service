@@ -77,6 +77,7 @@ namespace booking_and_payment_service.controllers
             string vnpTmnCode = "XY9GJBC5";
             string vnpHashSecret = "B5V47OE9SWWMCH4MORJTVRZK4GRKEN2Y";
             string vnpReturnUrl = "http://localhost:9503/api/payment/return";
+            
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
             vnpay.AddRequestData("vnp_TmnCode", vnpTmnCode);
@@ -85,7 +86,7 @@ namespace booking_and_payment_service.controllers
             vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_CurrCode", "VND");
             vnpay.AddRequestData("vnp_Locale", "vn");
-            vnpay.AddRequestData("vnp_OrderInfo", "=Payment:");
+            vnpay.AddRequestData("vnp_OrderInfo", "Payment:");
             vnpay.AddRequestData("vnp_OrderType", "other"); 
             vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_ReturnUrl", vnpReturnUrl);

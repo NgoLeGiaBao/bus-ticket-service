@@ -1,7 +1,10 @@
+using Newtonsoft.Json;
+
 using booking_and_payment_service.models;
 using booking_and_payment_service.responses;
 using booking_and_payment_service.dtos;
 using booking_and_payment_service.data;
+using booking_and_payment_service.rabbitmq.Messaging;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -11,11 +14,14 @@ namespace booking_and_payment_service.services
     {
         private readonly UserDbContext _context;
         private readonly RedisService _redisService;
+        private readonly IMessagePublisher _messagePublisher;
 
-        public BookingService(UserDbContext context, RedisService redisService)
+
+        public BookingService(UserDbContext context, RedisService redisService, IMessagePublisher messagePublisher)
         {
             _context = context;
             _redisService = redisService;
+            _messagePublisher = messagePublisher;
         }
 
         // Create booking
@@ -23,7 +29,7 @@ namespace booking_and_payment_service.services
         {
             try
             {
-                // Check in Redis if the seat is being held by another booking
+                // Check Redis for temporarily locked seats
                 foreach (var seat in dto.SeatNumbers)
                 {
                     string redisKey = $"booking:{dto.TripId}:{seat}";
@@ -38,18 +44,25 @@ namespace booking_and_payment_service.services
                     }
                 }
 
-                // Check in DB for officially booked seats
+                // Check DB for already booked seats
                 var existingBookings = await _context.Bookings
                     .Where(b => b.TripId == dto.TripId)
                     .ToListAsync();
 
-                var allBookedSeats = existingBookings.SelectMany(b => b.SeatNumbers).ToList();
-                var conflictSeats = dto.SeatNumbers.Intersect(allBookedSeats).ToList();
+                var bookedSeats = existingBookings.SelectMany(b => b.SeatNumbers).ToHashSet();
+                var conflictSeats = dto.SeatNumbers.Where(s => bookedSeats.Contains(s)).ToList();
 
                 if (conflictSeats.Any())
-                    return new ApiResponse<Booking>( false, $"Seats already booked: {string.Join(", ", conflictSeats)}", null, "SeatConflict");
+                {
+                    return new ApiResponse<Booking>(
+                        false,
+                        $"Seats already booked: {string.Join(", ", conflictSeats)}",
+                        null,
+                        "SeatConflict"
+                    );
+                }
 
-                // Create new booking
+                // Create Booking
                 var booking = new Booking
                 {
                     Id = Booking.GenerateBookingId(),
@@ -65,52 +78,46 @@ namespace booking_and_payment_service.services
                 _context.Bookings.Add(booking);
                 await _context.SaveChangesAsync();
 
-                // If booked by staff => create Payment immediately (cash)
-                if (booking.Status == "Booked")
+                // Create Payment
+                var payment = new Payment
                 {
-                    var payment = new Payment
-                    {
-                        Id = Guid.NewGuid(),
-                        BookingId = booking.Id,
-                        // Amount = await _paymentService.CalculateAmountAsync(booking.TripId, booking.SeatNumbers.Count),
-                        Amount = 12000,
-                        Method = "CASH",
-                        PaymentTime = DateTime.UtcNow,
-                        Status = "Pending"
-                    };
+                    Id = Guid.NewGuid(),
+                    BookingId = booking.Id,
+                    Amount = 12000, // Replace with: await _paymentService.CalculateAmountAsync(...)
+                    Method = booking.Status == "Booked" ? "CASH" : "UNKNOWN",
+                    PaymentTime = DateTime.UtcNow,
+                    Status = booking.Status == "Booked" ? "Pending" : "Waiting"
+                };
 
-                    await _context.Payments.AddAsync(payment);
-                    await _context.SaveChangesAsync();
-                } else {
-                    // If it is Pending (book online) → hold the seat and create an expire key
+                await _context.Payments.AddAsync(payment);
+                await _context.SaveChangesAsync();
+
+                // Handle seat hold and expiration for Pending booking
+                if (booking.Status == "Pending")
+                {
                     foreach (var seat in dto.SeatNumbers)
                     {
                         string redisSeatKey = $"booking:{dto.TripId}:{seat}";
                         await _redisService.SetKeyAsync(redisSeatKey, booking.Id, TimeSpan.FromMinutes(15));
                     }
 
-                    var payment = new Payment
-                    {
-                        Id = Guid.NewGuid(),
-                        BookingId = booking.Id,
-                        // Amount = await _paymentService.CalculateAmountAsync(booking.TripId, booking.SeatNumbers.Count),
-                        Amount = 12000,
-                        Method = "UNKNOWN",
-                        PaymentTime = DateTime.UtcNow,
-                        Status = "Waiting"
-                    };
-                    await _context.Payments.AddAsync(payment);
-                    await _context.SaveChangesAsync();
-
                     string expireKey = $"booking_expire:{booking.Id}";
                     await _redisService.SetKeyAsync(expireKey, "1", TimeSpan.FromMinutes(2));
                 }
 
-                return new ApiResponse<Booking>( true, "Booking created successfully", booking, null);
+                // Publish to RabbitMQ
+                _messagePublisher.Publish("booking.route.created", JsonConvert.SerializeObject(booking));
+
+                return new ApiResponse<Booking>( true, "Booking created successfully.", booking, null);
             }
             catch (Exception ex)
             {
-                return new ApiResponse<Booking>( false, "An error occurred while creating booking", null, ex.Message);
+                return new ApiResponse<Booking>(
+                    false,
+                    "An error occurred while creating the booking.",
+                    null,
+                    ex.Message
+                );
             }
         }
 
