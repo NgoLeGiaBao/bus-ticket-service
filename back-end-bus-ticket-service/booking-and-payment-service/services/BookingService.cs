@@ -50,8 +50,14 @@ namespace booking_and_payment_service.services
                     .Where(b => b.TripId == dto.TripId)
                     .ToListAsync();
 
-                var bookedSeats = existingBookings.SelectMany(b => b.SeatNumbers).ToHashSet();
-                var conflictSeats = dto.SeatNumbers.Where(s => bookedSeats.Contains(s)).ToList();
+                var bookedSeats = existingBookings
+                    .Where(b => b.Status != "Cancelled") 
+                    .SelectMany(b => b.SeatNumbers)
+                    .ToHashSet();
+
+                var conflictSeats = dto.SeatNumbers
+                    .Where(s => bookedSeats.Contains(s))
+                    .ToList();
 
                 if (conflictSeats.Any())
                 {
