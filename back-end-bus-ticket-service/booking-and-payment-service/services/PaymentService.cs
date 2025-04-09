@@ -20,76 +20,6 @@ namespace booking_and_payment_service.services
             _vnpayAdapter = vnpayAdapter;
         }
 
-        // public async Task<ApiResponse<Payment>> CreatePaymentAsync(PaymentRequestDto dto)
-        // {
-        //     try
-        //     {
-        //         var booking = await _context.Bookings.FindAsync(dto.BookingId);
-        //         if (booking == null)
-        //         {
-        //             return new ApiResponse<Payment>(
-        //                 false,
-        //                 "Booking not found",
-        //                 null,
-        //                 "BookingNotFound"
-        //             );
-        //         }
-
-        //         var payment = new Payment
-        //         {
-        //             Id = Guid.NewGuid(),
-        //             BookingId = dto.BookingId,
-        //             Amount = dto.Amount,
-        //             PaymentTime = DateTime.UtcNow,
-        //             Status = "Pending",
-        //             Method = dto.Method
-        //         };
-
-        //         _context.Payments.Add(payment);
-        //         await _context.SaveChangesAsync();
-
-        //         return new ApiResponse<Payment>(
-        //             true,
-        //             "Payment created successfully",
-        //             payment,
-        //             null
-        //         );
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         return new ApiResponse<Payment>(
-        //             false,
-        //             "An error occurred while creating payment",
-        //             null,
-        //             ex.Message
-        //         );
-        //     }
-        // }
-
-        // public async Task<ApiResponse<string>> CreateVNPayPaymentUrl(Guid paymentId, string bankCode, string language, string ipAddress)
-        // {
-        //     var payment = await _context.Payments.FindAsync(paymentId);
-        //     if (payment == null)
-        //     {
-        //         return new ApiResponse<string>(
-        //             false,
-        //             "Payment not found",
-        //             "NotFound",
-        //             null
-        //         );
-        //     }
-
-        //     string redirectUrl = _vnpayAdapter.CreatePaymentUrl((long)payment.Amount, bankCode, language, ipAddress, payment.Id.ToString());
-
-        //     return new ApiResponse<string>(
-        //         true,
-        //         "VNPay payment URL created",
-        //         redirectUrl,
-        //         null
-        //     );
-            
-        // }
-
         public async Task<ApiResponse<string>> HandleVNPayReturn(Dictionary<string, string> parameters)
         {
             var result = _vnpayAdapter.ProcessReturn(parameters);
@@ -152,6 +82,7 @@ namespace booking_and_payment_service.services
                 null
             );
         }
+        
         public async Task<ApiResponse<string>> HandleVNPayIPN(Dictionary<string, string> parameters)
         {
             var result = _vnpayAdapter.ProcessIPN(parameters);

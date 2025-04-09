@@ -152,7 +152,7 @@ namespace booking_and_payment_service.services
                         await _context.SaveChangesAsync();
                     }
                 }
-
+                _messagePublisher.Publish("booking.route.cancelled", JsonConvert.SerializeObject(booking));
                 return new ApiResponse<bool>(true, "Booking expired successfully", true, null);
             }
             catch (Exception ex)

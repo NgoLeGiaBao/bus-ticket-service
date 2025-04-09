@@ -1,8 +1,9 @@
 const express = require('express');
 const routeRoutes = require('./routes/routeRoutes');
 const tripRoutes = require('./routes/tripRoutes');
-const bookingConsumer = require("./consumers/bookingConsumer");
-bookingConsumer();
+const startConsumers = require("./consumers/bookingConsumer");
+
+startConsumers();
 
 
 const app = express();

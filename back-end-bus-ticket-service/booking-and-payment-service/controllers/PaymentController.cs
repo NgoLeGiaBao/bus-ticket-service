@@ -19,24 +19,6 @@ namespace booking_and_payment_service.controllers
             _paymentService = paymentService;
         }
 
-        // [HttpPost]
-        // public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDto dto)
-        // {
-        //     var result = await _paymentService.CreatePaymentAsync(dto);
-        //     return StatusCode(result.Success ? 200 : 400, result);
-        // }
-
-        // [HttpPost("vnpay-url")]
-        // public async Task<IActionResult> CreateVNPayUrl(
-        //     [FromQuery] Guid paymentId,
-        //     [FromQuery] string bankCode,
-        //     [FromQuery] string language)
-        // {
-        //     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        //     var result = await _paymentService.CreateVNPayPaymentUrl(paymentId, bankCode, language, ipAddress);
-        //     return StatusCode(result.Success ? 200 : 400, result);
-        // }
-
         [HttpGet("return")]
         public async Task<IActionResult> VNPayReturn()
         {
@@ -44,6 +26,7 @@ namespace booking_and_payment_service.controllers
             var result = await _paymentService.HandleVNPayReturn(queryParams);
             return StatusCode(result.Success ? 200 : 400, result);
         }
+
 
         [HttpPost("ipn")]
         public async Task<IActionResult> VNPayIPN()
@@ -65,38 +48,6 @@ namespace booking_and_payment_service.controllers
         {
             var result = await _paymentService.GetPaymentByIdAsync(id);
             return StatusCode(result.Success ? 200 : 404, result);
-        }
-
-        // Updated route to use route parameters
-        [HttpPost("vnpay-url-2")]
-        public async Task<IActionResult> CreateVNPayUrl() // Get language from route
-        {
-    
-            VnPay vnpay = new VnPay();
-            string vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-            string vnpApi = "http://localhost:9503/api/payment/ipn";
-            string vnpTmnCode = "XY9GJBC5";
-            string vnpHashSecret = "B5V47OE9SWWMCH4MORJTVRZK4GRKEN2Y";
-            string vnpReturnUrl = "http://localhost:9503/api/payment/return";
-            
-            vnpay.AddRequestData("vnp_Version", "2.1.0");
-            vnpay.AddRequestData("vnp_Command", "pay");
-            vnpay.AddRequestData("vnp_TmnCode", vnpTmnCode);
-            vnpay.AddRequestData("vnp_BankCode", "NCB");
-            vnpay.AddRequestData("vnp_Amount", (100 * 10000).ToString()); 
-            vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
-            vnpay.AddRequestData("vnp_CurrCode", "VND");
-            vnpay.AddRequestData("vnp_Locale", "vn");
-            vnpay.AddRequestData("vnp_OrderInfo", "Payment:");
-            vnpay.AddRequestData("vnp_OrderType", "other"); 
-            vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
-            vnpay.AddRequestData("vnp_ReturnUrl", vnpReturnUrl);
-            vnpay.AddRequestData("vnp_IpAddr", "127.0.0.1");
-            vnpay.AddRequestData("vnp_TxnRef", "order.IdOrder.ToString()" + DateTime.Now.ToString("yyyyMMddHHmmss")); 
-
-            string paymentUrl = vnpay.CreateRequestUrl(vnpUrl, vnpHashSecret);
-        
-            return Ok(paymentUrl);
         }
     }
 }
