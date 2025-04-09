@@ -54,3 +54,22 @@ exports.deleteTripController = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
+
+
+// Check same route
+exports.isSameRouteController = async (req, res) => {
+    const { tripId1, tripId2 } = req.query;
+    try {
+        const isSameRoute = await tripService.isSameRoute(tripId1, tripId2);
+
+        res.status(200).json({
+            success: true,
+            message: isSameRoute
+                ? 'Trips have the same route'
+                : 'Trips have different routes',
+            data: isSameRoute
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

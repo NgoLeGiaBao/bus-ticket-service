@@ -107,6 +107,27 @@ const removeBookedSeats = async (tripId, seatsToRemove) => {
     return data;
   };
 
+// Check if same route
+const isSameRoute = async (tripId1, tripId2) => {
+    const { data: trip1, error: error1 } = await supabase
+        .from('trips')
+        .select('route_id')
+        .eq('id', tripId1)
+        .single();
+
+    if (error1 || !trip1) throw new Error(`Trip ${tripId1} not found.`);
+
+    const { data: trip2, error: error2 } = await supabase
+        .from('trips')
+        .select('route_id')
+        .eq('id', tripId2)
+        .single();
+
+    if (error2 || !trip2) throw new Error(`Trip ${tripId2} not found.`);
+    console.log(trip1.route_id, trip2.route_id);
+    return trip1.route_id === trip2.route_id;
+};
+
 module.exports = {
     createTripService,
     getTripsService,
@@ -114,5 +135,6 @@ module.exports = {
     updateTripService,
     deleteTripService,
     addBookedSeats,
-    removeBookedSeats
+    removeBookedSeats,
+    isSameRoute
 };
