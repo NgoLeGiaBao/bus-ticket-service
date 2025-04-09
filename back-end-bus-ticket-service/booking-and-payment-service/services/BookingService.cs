@@ -107,7 +107,7 @@ namespace booking_and_payment_service.services
                     }
 
                     string expireKey = $"booking_expire:{booking.Id}";
-                    await _redisService.SetKeyAsync(expireKey, "1", TimeSpan.FromMinutes(2));
+                    await _redisService.SetKeyAsync(expireKey, "1", TimeSpan.FromMinutes(15));
                 }
 
                 // Publish to RabbitMQ
@@ -192,33 +192,142 @@ namespace booking_and_payment_service.services
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-        public async Task<ApiResponse<List<Booking>>> GetAllBookingsAsync()
+        // Get booking by number
+        public async Task<ApiResponse<List<Booking>>> GetBookingsByPhoneAsync(string phoneNumber)
         {
-            var bookings = await _context.Bookings.ToListAsync();
-            return new ApiResponse<List<Booking>>(true, "List of bookings", bookings, null);
+            var bookings = await _context.Bookings
+                .Where(b => b.PhoneNumber == phoneNumber && 
+                           (b.Status == "Booked" || b.Status == "Late"))
+                .ToListAsync();
+
+            if (bookings == null || bookings.Count == 0)
+            {
+                return new ApiResponse<List<Booking>>(false, "No bookings found", null, "NotFound");
+            }
+
+            return new ApiResponse<List<Booking>>(true, "Bookings found", bookings, null);
         }
 
-        public async Task<ApiResponse<Booking>> GetBookingByIdAsync(string id)
+        // Get booking by route trip
+        public async Task<ApiResponse<Booking>> GetBookingBySeatAndRouteTripAsync(string seatNumber, string tripId)
         {
-            var booking = await _context.Bookings.FindAsync(id);
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.SeatNumbers.Contains(seatNumber)
+                                       && b.TripId == tripId
+                                       && b.Status == "Booked");
+
             if (booking == null)
             {
-                return new ApiResponse<Booking>(false, "Booking not found", null, "NotFound");
+                return new ApiResponse<Booking>(false, "No booking found", null, "NotFound");
             }
 
             return new ApiResponse<Booking>(true, "Booking found", booking, null);
         }
+
+        // Get confirmed booking by phone
+        public async Task<ApiResponse<List<Booking>>> GetConfirmedBookingsByPhoneAsync(string phoneNumber)
+        {
+            var bookings = await _context.Bookings
+                .Where(b => b.PhoneNumber == phoneNumber && b.Status == "Confirmed")
+                .ToListAsync();
+
+            if (bookings == null || bookings.Count == 0)
+            {
+                return new ApiResponse<List<Booking>>(false, "No confirmed bookings found", null, "NotFound");
+            }
+
+            return new ApiResponse<List<Booking>>(true, "Confirmed bookings found", bookings, null);
+        }
+
+        // Change seat(s)
+        public async Task<ApiResponse<Booking>> ChangeSeatAsync(ChangeSeatRequestDto dto)
+        {
+            try
+            {
+                // Validate input
+                if (dto.OldSeatNumbers.Count != dto.NewSeatNumbers.Count)
+                    return new ApiResponse<Booking>(false, "Seat count mismatch", null, "SeatMismatch");
+
+                //  Get the records of the conditions that can be translated into SQL
+                var matchingBookings = await _context.Bookings
+                    .Where(b => b.Id == dto.BookingId 
+                             && b.TripId == dto.OldTripId 
+                             && b.Status == "Booked")
+                    .ToListAsync();
+
+                // Bước 2: Compare correct seats using SequenceEqual
+                var booking = matchingBookings.FirstOrDefault(b => 
+                    b.SeatNumbers.OrderBy(s => s).SequenceEqual(dto.OldSeatNumbers.OrderBy(s => s))
+                );
+
+                // Check if the booking exists
+                if (booking == null)
+                    return new ApiResponse<Booking>(false, "Original booking not found or invalid", null, "NotFound");
+
+                // Check Redis for temporarily locked seats
+                foreach (var seat in dto.NewSeatNumbers)
+                {
+                    string redisKey = $"booking:{dto.NewTripId}:{seat}";
+                    if (await _redisService.KeyExistsAsync(redisKey))
+                    {
+                        return new ApiResponse<Booking>(false, $"Seat {seat} is temporarily locked", null, "SeatLocked");
+                    }
+                }
+                // Redis lock 2 min
+                foreach (var seat in dto.NewSeatNumbers)
+                {
+                    string redisKey = $"booking:{dto.NewTripId}:{seat}";
+                    await _redisService.SetKeyAsync(redisKey, booking.Id, TimeSpan.FromMinutes(2));
+                }
+
+                // Delete Redis key of old seat
+                foreach (var oldSeat in dto.OldSeatNumbers)
+                {
+                    string oldRedisKey = $"booking:{dto.OldTripId}:{oldSeat}";
+                    await _redisService.DeleteKeyAsync(oldRedisKey);
+                }
+
+                // Check DB for already booked seats
+                var bookedSeats = await _context.Bookings
+                    .Where(b => b.TripId == dto.NewTripId && b.Status == "Booked")
+                    .SelectMany(b => b.SeatNumbers)
+                    .ToListAsync();
+
+                var conflictSeats = dto.NewSeatNumbers.Where(s => bookedSeats.Contains(s)).ToList();
+                if (conflictSeats.Any())
+                    return new ApiResponse<Booking>(false, $"Seats already booked: {string.Join(", ", conflictSeats)}", null, "SeatConflict");
+
+                // Update booking
+                booking.SeatNumbers = dto.NewSeatNumbers;
+                booking.TripId = dto.NewTripId;
+                booking.BookingTime = DateTime.UtcNow.AddHours(7);
+
+                _context.Bookings.Update(booking);
+                await _context.SaveChangesAsync();
+
+                var bookingChangedEvent = new
+                {
+                    OldTripId = dto.OldTripId,
+                    OldSeatNumbers = dto.OldSeatNumbers,
+                    NewTripId = booking.TripId,
+                    NewSeatNumbers = booking.SeatNumbers,
+                };
+
+                // Publish event to RabbitMQ
+                _messagePublisher.Publish("booking.route.changed", JsonConvert.SerializeObject(bookingChangedEvent));
+
+                return new ApiResponse<Booking>(true, "Booking updated successfully", booking, null);
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<Booking>(false, "An error occurred while changing the booking", null, ex.Message);
+            }
+        }
+
+
+
+
+
+
     }
 }

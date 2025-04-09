@@ -30,7 +30,7 @@ namespace booking_and_payment_service.models
         public DateTime BookingTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [RegularExpression(@"^(Pending|Booked|Cancelled|Late)$", ErrorMessage = "Status must be 'Pending', 'Confirmed', or 'Cancelled' or 'Late'")]
+        [RegularExpression(@"^(Pending|Booked|Cancelled|Late|Confirmed)$", ErrorMessage = "Status must be 'Pending', 'Confirmed', or 'Cancelled' or 'Late'")]
         public string Status { get; set; } = "Pending";
 
         public static string GenerateBookingId()

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
 using booking_and_payment_service.services;
 using booking_and_payment_service.responses;
 using booking_and_payment_service.models;
@@ -33,22 +35,58 @@ namespace booking_and_payment_service.controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<Booking>>>> GetAllBookings()
+        [Authorize(Roles = "Admin, Manager, Employee")]
+        [HttpPost("create")]
+        public async Task<ActionResult<ApiResponse<BookingResponseDto>>> CreateBookingEmployee([FromBody] BookingRequestDto dto)
         {
-            var result = await _bookingService.GetAllBookingsAsync();
-            return Ok(result);
-        }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new ApiResponse<BookingResponseDto>( false, "Invalid input data", null, string.Join("; ", ModelState.Values     .SelectMany(x => x.Errors)     .Select(x => x.ErrorMessage))));
+            }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse<Booking>>> GetBookingById(string id)
-        {
-            var result = await _bookingService.GetBookingByIdAsync(id);
+            var result = await _bookingService.CreateBookingAsync(dto, "employee");
 
             if (!result.Success)
-                return NotFound(result);
+                return BadRequest(result);
 
             return Ok(result);
+                
         }
+
+        [Authorize(Roles = "Admin, Manager, Employee")]
+        [HttpGet("phone")]
+        public async Task<IActionResult> GetBookingsByPhone([FromQuery] string phoneNumber)
+        {
+            var result = await _bookingService.GetBookingsByPhoneAsync(phoneNumber);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin, Manager, Employee")]
+        [HttpGet("seat-trip")]
+        public async Task<IActionResult> GetBookingBySeatAndTrip([FromQuery] string seatNumber, [FromQuery] string tripId)
+        {
+            var result = await _bookingService.GetBookingBySeatAndRouteTripAsync(seatNumber, tripId);
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Admin, Manager, Employee")]
+        [HttpGet("confirmed")]
+        public async Task<IActionResult> GetConfirmedBookingsByPhone([FromQuery] string phoneNumber)
+        {
+            var result = await _bookingService.GetConfirmedBookingsByPhoneAsync(phoneNumber);
+            return Ok(result);
+        }
+
+        [HttpPost("change-seat")]
+        public async Task<IActionResult> ChangeSeatAsync([FromBody] ChangeSeatRequestDto dto)
+        {
+            var result = await _bookingService.ChangeSeatAsync(dto);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
     }
 }
