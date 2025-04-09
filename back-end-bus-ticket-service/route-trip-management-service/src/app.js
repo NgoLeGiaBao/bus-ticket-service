@@ -1,3 +1,7 @@
+require("dotenv").config({
+    path: process.env.NODE_ENV === 'production' ? '.env.docker' : '.env.local'
+});
+
 const express = require('express');
 const routeRoutes = require('./routes/routeRoutes');
 const tripRoutes = require('./routes/tripRoutes');

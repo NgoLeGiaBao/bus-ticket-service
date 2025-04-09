@@ -149,10 +149,10 @@ namespace booking_and_payment_service.services
                     if (payment != null)
                     {
                         payment.Status = "Failed";
+                        _messagePublisher.Publish("booking.route.cancelled", JsonConvert.SerializeObject(booking));
                         await _context.SaveChangesAsync();
                     }
                 }
-                _messagePublisher.Publish("booking.route.cancelled", JsonConvert.SerializeObject(booking));
                 return new ApiResponse<bool>(true, "Booking expired successfully", true, null);
             }
             catch (Exception ex)
@@ -176,12 +176,12 @@ namespace booking_and_payment_service.services
             vnpay.AddRequestData("vnp_TmnCode", vnpTmnCode);
             vnpay.AddRequestData("vnp_BankCode", "NCB");
             vnpay.AddRequestData("vnp_Amount", (amount * 100).ToString()); 
-            vnpay.AddRequestData("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
+            vnpay.AddRequestData("vnp_CreateDate", DateTime.UtcNow.AddHours(7).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_CurrCode", "VND");
             vnpay.AddRequestData("vnp_Locale", "vn");
             vnpay.AddRequestData("vnp_OrderInfo", "Payment for booking:" + bookingId);
             vnpay.AddRequestData("vnp_OrderType", "other"); 
-            vnpay.AddRequestData("vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss"));
+            vnpay.AddRequestData("vnp_ExpireDate", DateTime.UtcNow.AddHours(7).AddMinutes(15).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_ReturnUrl", vnpReturnUrl);
             vnpay.AddRequestData("vnp_IpAddr", "127.0.0.1");
             vnpay.AddRequestData("vnp_TxnRef", bookingId); 

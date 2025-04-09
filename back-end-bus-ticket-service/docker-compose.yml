@@ -42,21 +42,24 @@ services:
     ports:
       - "9502:9502"
     env_file:
-      - ./route-trip-management-service/.env
+      - ./route-trip-management-service/.env.docker
     networks:
       - kong-network
 
   booking-and-payment-service:
     build: ./booking-and-payment-service
     container_name: booking-and-payment-service
-    volumes:
-      - ./keys:/root/.aspnet/DataProtection-Keys
     ports:
       - "9503:9503"
     networks:
       - kong-network
     depends_on:
       - redis-server
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    volumes:
+      - ./keys:/root/.aspnet/DataProtection-Keys
+      - /etc/localtime:/etc/localtime:ro
 
   redis-server:
     image: redis
