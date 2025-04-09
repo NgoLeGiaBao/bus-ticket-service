@@ -3,6 +3,7 @@ using booking_and_payment_service.dtos;
 using booking_and_payment_service.models;
 using booking_and_payment_service.responses;
 using booking_and_payment_service.services.payment;
+using testvnpay.Payments;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -19,110 +20,138 @@ namespace booking_and_payment_service.services
             _vnpayAdapter = vnpayAdapter;
         }
 
-        public async Task<ApiResponse<Payment>> CreatePaymentAsync(PaymentRequestDto dto)
-        {
-            try
-            {
-                var booking = await _context.Bookings.FindAsync(dto.BookingId);
-                if (booking == null)
-                {
-                    return new ApiResponse<Payment>(
-                        false,
-                        "Booking not found",
-                        null,
-                        "BookingNotFound"
-                    );
-                }
+        // public async Task<ApiResponse<Payment>> CreatePaymentAsync(PaymentRequestDto dto)
+        // {
+        //     try
+        //     {
+        //         var booking = await _context.Bookings.FindAsync(dto.BookingId);
+        //         if (booking == null)
+        //         {
+        //             return new ApiResponse<Payment>(
+        //                 false,
+        //                 "Booking not found",
+        //                 null,
+        //                 "BookingNotFound"
+        //             );
+        //         }
 
-                var payment = new Payment
-                {
-                    Id = Guid.NewGuid(),
-                    BookingId = dto.BookingId,
-                    Amount = dto.Amount,
-                    PaymentTime = DateTime.UtcNow,
-                    Status = "Pending",
-                    Method = dto.Method
-                };
+        //         var payment = new Payment
+        //         {
+        //             Id = Guid.NewGuid(),
+        //             BookingId = dto.BookingId,
+        //             Amount = dto.Amount,
+        //             PaymentTime = DateTime.UtcNow,
+        //             Status = "Pending",
+        //             Method = dto.Method
+        //         };
 
-                _context.Payments.Add(payment);
-                await _context.SaveChangesAsync();
+        //         _context.Payments.Add(payment);
+        //         await _context.SaveChangesAsync();
 
-                return new ApiResponse<Payment>(
-                    true,
-                    "Payment created successfully",
-                    payment,
-                    null
-                );
-            }
-            catch (Exception ex)
-            {
-                return new ApiResponse<Payment>(
-                    false,
-                    "An error occurred while creating payment",
-                    null,
-                    ex.Message
-                );
-            }
-        }
+        //         return new ApiResponse<Payment>(
+        //             true,
+        //             "Payment created successfully",
+        //             payment,
+        //             null
+        //         );
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         return new ApiResponse<Payment>(
+        //             false,
+        //             "An error occurred while creating payment",
+        //             null,
+        //             ex.Message
+        //         );
+        //     }
+        // }
 
-        public async Task<ApiResponse<string>> CreateVNPayPaymentUrl(Guid paymentId, string bankCode, string language, string ipAddress)
-        {
-            var payment = await _context.Payments.FindAsync(paymentId);
-            if (payment == null)
-            {
-                return new ApiResponse<string>(
-                    false,
-                    "Payment not found",
-                    "NotFound",
-                    null
-                );
-            }
+        // public async Task<ApiResponse<string>> CreateVNPayPaymentUrl(Guid paymentId, string bankCode, string language, string ipAddress)
+        // {
+        //     var payment = await _context.Payments.FindAsync(paymentId);
+        //     if (payment == null)
+        //     {
+        //         return new ApiResponse<string>(
+        //             false,
+        //             "Payment not found",
+        //             "NotFound",
+        //             null
+        //         );
+        //     }
 
-            string redirectUrl = _vnpayAdapter.CreatePaymentUrl((long)payment.Amount, bankCode, language, ipAddress, payment.Id.ToString());
+        //     string redirectUrl = _vnpayAdapter.CreatePaymentUrl((long)payment.Amount, bankCode, language, ipAddress, payment.Id.ToString());
 
-            return new ApiResponse<string>(
-                true,
-                "VNPay payment URL created",
-                redirectUrl,
-                null
-            );
+        //     return new ApiResponse<string>(
+        //         true,
+        //         "VNPay payment URL created",
+        //         redirectUrl,
+        //         null
+        //     );
             
-        }
+        // }
 
         public async Task<ApiResponse<string>> HandleVNPayReturn(Dictionary<string, string> parameters)
         {
             var result = _vnpayAdapter.ProcessReturn(parameters);
 
-            if (!result.Success) return result;
-
-            string txnRef = parameters["vnp_TxnRef"];
-            var payment = await _context.Payments.FindAsync(Guid.Parse(txnRef));
-            if (payment == null)
+            if (!result.Success)
             {
-                
                 return new ApiResponse<string>(
                     false,
-                    "Payment not found",
-                    "InvalidTxnRef",
+                    result.Message,
+                    "VNPayValidationFailed",
                     null
                 );
             }
 
-            if (parameters["vnp_ResponseCode"] == "00" && parameters["vnp_TransactionStatus"] == "00")
+            // Get parameters
+            var parsedParams = result.Data;
+
+            string bookingId = parsedParams["vnp_TxnRef"];
+
+            // Get payment followed by booking
+            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.BookingId == bookingId);
+            if (payment == null)
             {
-                payment.Status = "Paid";
+                return new ApiResponse<string>(
+                    false,
+                    "Payment not found",
+                    "InvalidBookingId",
+                    null
+                );
+            }
+
+            // Get booking
+            var booking = await _context.Bookings.FindAsync(bookingId);
+            if (booking == null)
+            {
+                return new ApiResponse<string>(
+                    false,
+                    "Booking not found",
+                    "InvalidBookingId",
+                    null
+                );
+            }
+
+            // Update payment
+            if (parsedParams["vnp_ResponseCode"] == "00" && parsedParams["vnp_TransactionStatus"] == "00")
+            {
+                payment.Status = "Success";
+                payment.Method = "vnpay";
                 payment.PaymentTime = DateTime.UtcNow;
+
+                booking.Status = "Booked";
+
                 await _context.SaveChangesAsync();
             }
 
             return new ApiResponse<string>(
                 true,
-                $"Payment for {txnRef} updated",
+                $"Payment and booking for {bookingId} updated",
                 null,
                 null
             );
         }
-
         public async Task<ApiResponse<string>> HandleVNPayIPN(Dictionary<string, string> parameters)
         {
             var result = _vnpayAdapter.ProcessIPN(parameters);
@@ -187,5 +216,6 @@ namespace booking_and_payment_service.services
                 null
             );
         }
+
     }
 }

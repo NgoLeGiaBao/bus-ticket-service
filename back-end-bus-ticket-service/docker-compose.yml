@@ -55,6 +55,8 @@ services:
       - "9503:9503"
     networks:
       - kong-network
+    depends_on:
+      - redis-server
 
   redis-server:
     image: redis

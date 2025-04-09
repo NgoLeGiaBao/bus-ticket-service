@@ -1,6 +1,7 @@
 using booking_and_payment_service.dtos;
 using booking_and_payment_service.responses;
 using booking_and_payment_service.services;
+
 using Microsoft.AspNetCore.Mvc;
 using testvnpay.Payments;
 using Microsoft.AspNetCore.Http;
@@ -18,23 +19,23 @@ namespace booking_and_payment_service.controllers
             _paymentService = paymentService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDto dto)
-        {
-            var result = await _paymentService.CreatePaymentAsync(dto);
-            return StatusCode(result.Success ? 200 : 400, result);
-        }
+        // [HttpPost]
+        // public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDto dto)
+        // {
+        //     var result = await _paymentService.CreatePaymentAsync(dto);
+        //     return StatusCode(result.Success ? 200 : 400, result);
+        // }
 
-        [HttpPost("vnpay-url")]
-        public async Task<IActionResult> CreateVNPayUrl(
-            [FromQuery] Guid paymentId,
-            [FromQuery] string bankCode,
-            [FromQuery] string language)
-        {
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var result = await _paymentService.CreateVNPayPaymentUrl(paymentId, bankCode, language, ipAddress);
-            return StatusCode(result.Success ? 200 : 400, result);
-        }
+        // [HttpPost("vnpay-url")]
+        // public async Task<IActionResult> CreateVNPayUrl(
+        //     [FromQuery] Guid paymentId,
+        //     [FromQuery] string bankCode,
+        //     [FromQuery] string language)
+        // {
+        //     var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        //     var result = await _paymentService.CreateVNPayPaymentUrl(paymentId, bankCode, language, ipAddress);
+        //     return StatusCode(result.Success ? 200 : 400, result);
+        // }
 
         [HttpGet("return")]
         public async Task<IActionResult> VNPayReturn()
@@ -94,7 +95,7 @@ namespace booking_and_payment_service.controllers
             vnpay.AddRequestData("vnp_TxnRef", "order.IdOrder.ToString()" + DateTime.Now.ToString("yyyyMMddHHmmss")); 
 
             string paymentUrl = vnpay.CreateRequestUrl(vnpUrl, vnpHashSecret);
-
+        
             return Ok(paymentUrl);
         }
     }

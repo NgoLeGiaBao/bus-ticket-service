@@ -18,18 +18,11 @@ namespace booking_and_payment_service.controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse<Booking>>> CreateBooking([FromBody] BookingRequestDto dto)
+        public async Task<ActionResult<ApiResponse<BookingResponseDto>>> CreateBooking([FromBody] BookingRequestDto dto)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ApiResponse<Booking>(
-                    false,
-                    "Invalid input data",
-                    null,
-                    string.Join("; ", ModelState.Values
-                        .SelectMany(x => x.Errors)
-                        .Select(x => x.ErrorMessage))
-                ));
+                return BadRequest(new ApiResponse<BookingResponseDto>( false, "Invalid input data", null, string.Join("; ", ModelState.Values     .SelectMany(x => x.Errors)     .Select(x => x.ErrorMessage))));
             }
 
             var result = await _bookingService.CreateBookingAsync(dto, "customer");

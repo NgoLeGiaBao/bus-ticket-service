@@ -58,7 +58,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddHttpContextAccessor();
 
 // Register Redis
-var redisConnectionString = builder.Configuration["Redis:Configuration"];
+var env = builder.Environment;
+var redisConnectionString = env.IsDevelopment()
+    ? "localhost:6379"
+    : builder.Configuration["Redis:Configuration"];
 if (string.IsNullOrEmpty(redisConnectionString))
 {
     throw new InvalidOperationException("Redis connection string is missing or empty.");
@@ -94,9 +97,11 @@ builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("R
 builder.Services.AddSingleton(sp =>
 {
     var config = sp.GetRequiredService<IOptions<RabbitMQSettings>>().Value;
+    var hostName = env.IsDevelopment() ? "localhost" : config.HostName;
+
     var factory = new ConnectionFactory
     {
-        HostName = config.HostName,
+        HostName = hostName,
         UserName = config.UserName,
         Password = config.Password,
         Port = config.Port

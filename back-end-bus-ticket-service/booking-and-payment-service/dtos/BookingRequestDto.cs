@@ -20,5 +20,7 @@ namespace booking_and_payment_service.dtos
         [Required]
         [MinLength(1)]
         public List<string> SeatNumbers { get; set; } 
+
+        public decimal Amount { get; set; }
     }
 }
