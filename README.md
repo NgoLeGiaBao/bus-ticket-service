@@ -67,7 +67,7 @@ front-end-bus-ticket-service/
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/your-repository/bus-ticket-service.git
+    git clone https://github.com/NgoLeGiaBao/bus-ticket-service
     ```
 
 2. Navigate to the backend directory:
