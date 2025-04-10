@@ -4,6 +4,7 @@
 A **Service-Oriented Architecture (SOA)** solution for managing bus ticket bookings, composed of modular backend services and a React frontend.
 
 ### Repository Structure
+```plaintext
 back-end-bus-ticket-service/
 ├── booking-and-payment-service/  # C# service for tickets/payments
 ├── route-trip-management-service/  # Node.js service for routes/schedules
@@ -17,6 +18,7 @@ front-end-bus-ticket-service/
 ├── src/  # React application
 ├── tailwind.config.cjs  # CSS framework
 └── vite.config.js  # Frontend build tool
+```
 
 ### Technology Stack
 | Component               | Technology          |
