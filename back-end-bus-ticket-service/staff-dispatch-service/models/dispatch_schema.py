@@ -22,6 +22,7 @@ class DispatchAssignmentCreate(BaseModel):
     expected_end_time: datetime
     from_location: str
     to_location: str
+    role: str
 
 class StaffUnavailabilityCreate(BaseModel):
     staff_id: UUID

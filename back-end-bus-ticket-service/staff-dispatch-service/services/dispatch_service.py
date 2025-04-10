@@ -3,11 +3,14 @@ from datetime import datetime
 from core.supabase_client import supabase
 from uuid import UUID
 from models.dispatch_schema import StaffRouteCreate, StaffRouteUpdate, DispatchAssignmentCreate, StaffUnavailabilityCreate
+from typing import Optional
 
 # Helper function to serialize UUID
 def serialize_uuid(obj):
     if isinstance(obj, UUID):
-        return str(obj)  # Chuyển UUID thành chuỗi
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
     return obj
 
 # Staff Routes APIs
@@ -17,10 +20,7 @@ def add_staff_route(data: StaffRouteCreate):
         data_dict = data.dict()
         serialized_data = {key: serialize_uuid(value) for key, value in data_dict.items()}
 
-      
         response = supabase.table("staff_routes").insert(serialized_data).execute()
-        print(response.data)  # In ra response để kiểm tra
-
      
         if response.data: 
             staff_route_data = response.data[0] 
@@ -101,18 +101,28 @@ def add_dispatch_assignment(data: DispatchAssignmentCreate):
             if (data.assigned_at < off_end and data.expected_end_time > off_start):
                 raise HTTPException(status_code=400, detail="Driver is unavailable during this time")
 
-        return supabase.table("dispatch_assignments").insert(data.dict()).execute()
+        # Serialize UUID và datetime
+        serialized_data = {k: serialize_uuid(v) for k, v in data.dict().items()}
+
+        return supabase.table("dispatch_assignments").insert(serialized_data).execute()
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-def get_dispatch_history(staff_id: str):
+def get_dispatch_history(staff_id: Optional[str] = None):
     try:
-        response = supabase.table("dispatch_assignments").select("*").eq("staff_id", staff_id).execute()
+        query = supabase.table("dispatch_assignments").select("*")
+        
+        if staff_id:
+            query = query.eq("staff_id", staff_id)
+
+        response = query.execute()
+        
         if response.data:
             return [{key: serialize_uuid(value) for key, value in dispatch.items()} for dispatch in response.data]
         else:
-            return {"error": "Failed to fetch dispatch history", "status_code": "Unknown"}
+            return {"error": "No dispatch records found", "status_code": "Not Found"}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
