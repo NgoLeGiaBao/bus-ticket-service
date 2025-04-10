@@ -33,6 +33,8 @@ services:
     container_name: staff-dispatch-service
     ports:
       - "9501:9501"
+    env_file:
+      - ./staff-dispatch-service/.env
     networks:
       - kong-network
   
