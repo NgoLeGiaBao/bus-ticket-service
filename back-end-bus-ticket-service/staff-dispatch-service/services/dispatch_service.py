@@ -13,17 +13,17 @@ def serialize_uuid(obj):
 # Staff Routes APIs
 def add_staff_route(data: StaffRouteCreate):
     try:
-        # Chuyển UUID thành chuỗi trong data dict trước khi insert
+       
         data_dict = data.dict()
         serialized_data = {key: serialize_uuid(value) for key, value in data_dict.items()}
 
-        # Insert serialized data vào Supabase
+      
         response = supabase.table("staff_routes").insert(serialized_data).execute()
         print(response.data)  # In ra response để kiểm tra
 
-        # Kiểm tra phản hồi từ Supabase
-        if response.data:  # Kiểm tra nếu response có dữ liệu trong 'data'
-            staff_route_data = response.data[0]  # Lấy dữ liệu từ 'data', vì nó là một danh sách
+     
+        if response.data: 
+            staff_route_data = response.data[0] 
             return staff_route_data
         else:
             return {"error": "Failed to add staff route", "status_code": "Unknown"}
@@ -43,7 +43,9 @@ def get_staff_routes(staff_id: str):
 
 def update_staff_route(staff_id: str, route_id: str, data: StaffRouteUpdate):
     try:
-        response = supabase.table("staff_routes").update(data.dict()).eq("staff_id", staff_id).eq("route_id", route_id).execute()
+        serialized_data = {key: serialize_uuid(value) for key, value in data.dict().items()}
+        response = supabase.table("staff_routes").update(serialized_data).eq("staff_id", staff_id).eq("route_id", route_id).execute()
+        
         if response.data:
             return {key: serialize_uuid(value) for key, value in response.data[0].items()}
         else:

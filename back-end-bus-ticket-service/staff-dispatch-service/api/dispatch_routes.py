@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post("/staff_routes")
 def create_staff_route(data: StaffRouteCreate):
     try:
-        response_data = add_staff_route(data)  # Call service function
+        response_data = add_staff_route(data) 
         if response_data:
             api_response = ApiResponse(
                 success=True,
@@ -45,7 +45,7 @@ def create_staff_route(data: StaffRouteCreate):
 
 
 @router.get("/staff_routes/{staff_id}")
-def get_routes_for_staff(staff_id: str, user_data: dict = Depends(check_role("admin"))):
+def get_routes_for_staff(staff_id: str):
     try:
         routes = get_staff_routes(staff_id) 
         if not routes:
