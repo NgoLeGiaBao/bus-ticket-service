@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from auth.dependencies import check_role
 from services.dispatch_service import (
     add_staff_route,
     get_staff_routes,
@@ -44,7 +45,7 @@ def create_staff_route(data: StaffRouteCreate):
 
 
 @router.get("/staff_routes/{staff_id}")
-def get_routes_for_staff(staff_id: str):
+def get_routes_for_staff(staff_id: str, user_data: dict = Depends(check_role("admin"))):
     try:
         routes = get_staff_routes(staff_id) 
         if not routes:
@@ -86,7 +87,7 @@ def delete_route_for_staff(staff_id: str, route_id: str):
 
 
 @router.get("/staff_routes")
-def get_all_routes():
+def get_all_routes(user_data: dict = Depends(check_role("admin"))):
     try:
         all_routes = get_all_staff_routes() 
         if not all_routes:
