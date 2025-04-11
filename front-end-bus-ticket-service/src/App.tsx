@@ -1,22 +1,40 @@
 import { useEffect, useState } from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Outlet, Route, Routes, useLocation } from 'react-router-dom';
 
 import Loader from './common/Loader';
 import PageTitle from './components/PageTitle';
-import DefaultLayout from './layout/DefaultLayout';
-import Home from './pages/Customer/Home';
-import Order from './pages/Customer/Order';
-import TableManagement from './pages/Management/Table';
-import DishManagement from './pages/Management/Dishes';
-import PrivateRoute from './components/PrivateRoute';
-import SignIn from './pages/Authentication/SignIn';
-import { ShiftBillingSummary } from './pages/Management/ShiftBillingSummary';
-import { BillingHistory } from './pages/Management/BillingHistory';
-import UnauthorizedPage from './pages/Errors/Unauthorized';
 import NotFoundPage from './pages/Errors/NotFound';
+import HomePage from './pages/Customer/HomePage';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import LoginPage from './pages/Customer/LoginPage';
+import SignUp from './pages/Authentication/SignUp';
+import SignupPage from './pages/Customer/SignUpPage';
+import LookUpPage from './pages/Customer/LookUpPage';
+import ForgotPasswordForm from './components/ForgotPasswordForm';
+import BookingTicketPage from './pages/Customer/BookingTicketPage';
+import ForgotPasswordPage from './pages/Customer/ForgotPasswordPage';
+// import AdminDashboard from './pages/Admin/Dashboard';
+
+// Public Layout: Navbar + Footer
+const PublicLayout = () => (
+  <>
+    <Navbar />
+    <Outlet />
+    <Footer />
+  </>
+);
+
+// Admin Layout: có thể là Sidebar, Header riêng hoặc chỉ đơn giản là không có gì
+const AdminLayout = () => (
+  <>
+    {/* <AdminNavbar /> hoặc <Sidebar /> tùy bạn */}
+    <Outlet />
+  </>
+);
 
 function App() {
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const { pathname } = useLocation();
 
   useEffect(() => {
@@ -24,103 +42,70 @@ function App() {
   }, [pathname]);
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
+    setTimeout(() => setLoading(false), 1000); 
   }, []);
 
-  return loading ? (
-    <Loader />
-  ) : (
-    
+  if (loading) return <Loader />;
+
+  return (
     <Routes>
-      <Route path="*" element={
-        <>
-          <PageTitle title="Not Found" />
-          <NotFoundPage />
-        </>
-        } 
-      />
-      <Route
-        index
-        element={
+      {/* Public layout routes */}
+      <Route element={<PublicLayout />}>
+        <Route index element={
           <>
-            <PageTitle title="Welcome to Your Dining Experience!" />
-            <Home />
-          </>
-        }
-      />
-      <Route
-        path='/sign-in'
-        element={
-          <>
-            <PageTitle title="Sign In | Restaurant Management" />
-            <SignIn />
-          </>
-        }
-      />
-      <Route
-        path="/order"
-
-        element={
-          <>
-            <PageTitle title="Order" />
-            <Order />
-          </>
-        }
-      />
-      <Route
-        path="/table-management"
-
-        element={
-          <>
-            <PageTitle title="Table Stautus Page" />
-            <PrivateRoute allowedRoles={["3"]}><TableManagement shouldShowHeader={true} /></PrivateRoute>
-          </>
-        }
-      />
-      <Route
-        path="/dish-management"
-
-        element={
-          <>
-            <PageTitle title="Dish Management" />
-            <PrivateRoute allowedRoles={["2"]}><DishManagement /></PrivateRoute>
-          </>
-        }
-      />
-
-      <Route
-        path="/unauthorized"   
-        element={
-          <>
-            <PageTitle title="Unauthorized" />
-            <UnauthorizedPage />
-          </> 
-        }
-      />
-      <Route element={<DefaultLayout />}>
-        <Route path="/bill/shift-billing-summary" 
-            element={
-              <>
-              <PageTitle title="Shift Billing Summary" />
-              <PrivateRoute allowedRoles={["1"]}><ShiftBillingSummary /></PrivateRoute>
-              </>
-            } 
-        />
-        <Route path="/bill/billing-history" 
-            element=
-            {<>
-              <PageTitle title="Billing History" />
-              <PrivateRoute allowedRoles={["1"]}><BillingHistory /></PrivateRoute>
-            </>
-          } 
-        />
-        <Route path="/table-management-admin" element={
-          <>
-            <PageTitle title="Table Management" />
-            <TableManagement shouldShowHeader={false} />
+            <PageTitle title="BHP Bus Line"/>
+            <HomePage />
           </>
         } />
+        {/* Thêm các trang public khác như About, Contact tại đây */}
+        <Route path='/login' element={
+           <>
+            <PageTitle title="Đăng nhập "/>
+            <LoginPage />
+           </>
+        } />
+        <Route path='/signup' element={
+          <>
+            <PageTitle title="Đăng ký"/>
+            <SignupPage />
+          </>
+        } />
+        <Route path ='/lookup-ticket' element={
+          <>
+            <PageTitle title="Tra cứu vé"/>
+            <LookUpPage />
+          </>
+        }/>
+        <Route path ='/forgot-password' element={
+          <>
+            <PageTitle title="Đặt lại mật khẩu"/>
+            <ForgotPasswordPage />
+          </>
+        }/>
+        <Route path ='/dat-ve' element={
+          <>
+            <PageTitle title="Đặt vé"/>
+            <BookingTicketPage />
+          </>
+        }/>
+
       </Route>
+
+      {/* Admin layout routes */}
+      {/* <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+      </Route> */}
+
+      {/* 404 */}
+      <Route
+        path="*"
+        element={
+          <>
+            <PageTitle title="Not Found" />
+            <NotFoundPage />
+          </>
+        }
+      />
     </Routes>
   );
 }

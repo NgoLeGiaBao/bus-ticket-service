@@ -6,7 +6,7 @@ import App from './App';
 import { store, persistor } from './store/store';
 import { PersistGate } from 'redux-persist/integration/react';
 import './css/style.css';
-import './css/satoshi.css';
+// import './css/satoshi.css';
 import 'jsvectormap/dist/css/jsvectormap.css';
 import 'flatpickr/dist/flatpickr.min.css';
 
