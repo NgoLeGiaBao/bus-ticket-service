@@ -1,0 +1,6 @@
+fastapi==0.95.2
+uvicorn==0.22.0
+celery==5.2.7
+python-dotenv==0.21.1
+pydantic==1.10.7
+smtplib==0.0.1

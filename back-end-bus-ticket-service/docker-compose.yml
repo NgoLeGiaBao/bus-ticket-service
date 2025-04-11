@@ -63,6 +63,22 @@ services:
       - ./keys:/root/.aspnet/DataProtection-Keys
       - /etc/localtime:/etc/localtime:ro
 
+  notification-service:
+    build: .
+    env_file:
+      - ./notification-service/.env.prod
+    depends_on:
+      - rabbitmq-bus
+    ports:
+      - "9504:9504"
+    celery_worker:
+      build: .
+      command: celery -A celery_worker worker --loglevel=info
+      env_file:
+        - ./notification-service/.env.prod
+      depends_on:
+        - rabbitmq-bus
+
   redis-server:
     image: redis
     container_name: redis-server

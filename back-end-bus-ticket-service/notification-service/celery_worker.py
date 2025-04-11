@@ -1,0 +1,1 @@
+from tasks.email import celery_app
