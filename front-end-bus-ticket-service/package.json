@@ -1,5 +1,5 @@
 {
-  "name": "tailadmin-react-free",
+  "name": "front-end-bus-ticket-service",
   "private": true,
   "version": "1.3.8",
   "type": "module",
@@ -7,11 +7,6 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
-  },
-  "author": {
-    "name": "TailAdmin",
-    "email": "hello@tailadmin.com",
-    "url": "https://tailadmin.com"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",

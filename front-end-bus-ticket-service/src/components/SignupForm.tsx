@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import HomePromotion from './HomePromotion';
+import { RegisterParams } from '../interfaces/Auth';
+import { postLogin, postRegister } from '../services/apiServices';
 
 // Define the types for the state variables
 interface SignupFormData {
@@ -28,27 +30,22 @@ function SignupForm() {
 
   // Send POST request to Sign up
   const signupBtn = async () => {
-    const data: SignupFormData = {
-      last_name,
-      first_name,
-      phone_number,
-      email,
+    const data: RegisterParams = {
+      phoneNumber: phone_number,
+      username: `${last_name} ${first_name}`,
       password,
-      password_confirmation,
+      email,
     };
-    await axios
-      .post(API_URL + 'customer/register', data)
-      .then((res) => {
-        console.log(res.data);
-        if (res.status === 201) {
-          setMessage(res.data.message);
-          window.location.href = REACT_URL + 'email-verify?id=' + res.data.id;
-        }
-      })
-      .catch((err) => {
-        console.log(err.response.data);
-        handleMessage(err.response.data.message);
-      });
+    try {
+      const res = await postRegister(data);
+      console.log(res);
+      if (res.success) {
+        setMessage(res.message);
+      }
+    } catch (err: any) {
+      console.log(err.response.data);
+      handleMessage(err.response.data.message);
+    }
   };
 
   // Convert response to message

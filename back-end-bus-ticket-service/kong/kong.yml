@@ -8,13 +8,13 @@ services:
       - name: user-management-route
         paths:
           - /api/v1/identity
-        methods: [GET, POST, PUT, DELETE]
+        methods: [GET, POST, PUT, DELETE,OPTIONS]
         strip_path: true
         preserve_host: false
         plugins:
           - name: cors
             config:
-              origins: ["*"]
+              origins: ["http://localhost:5173"]
               methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
               headers: ["Accept", "Authorization", "Content-Type"]
               exposed_headers: ["X-Custom-Header"]
@@ -27,13 +27,13 @@ services:
       - name: staff-dispatch-route
         paths:
           - /api/v1/dispatch-assignments
-        methods: [GET, POST, PUT, DELETE]
+        methods: [GET, POST, PUT, DELETE,OPTIONS]
         strip_path: true
         preserve_host: false
         plugins:
           - name: cors
             config:
-              origins: ["*"]
+              origins: ["http://localhost:5173"]
               methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
               headers: ["Accept", "Authorization", "Content-Type"]
               exposed_headers: ["X-Custom-Header"]
@@ -46,13 +46,13 @@ services:
       - name: route-trip-management-route
         paths:
           - /api/v1/journeys
-        methods: [GET, POST, PUT, DELETE]
+        methods: [GET, POST, PUT, DELETE,OPTIONS]
         strip_path: true
         preserve_host: false
         plugins:
           - name: cors
             config:
-              origins: ["*"]
+              origins: ["http://localhost:5173"]
               methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
               headers: ["Accept", "Authorization", "Content-Type"]
               exposed_headers: ["X-Custom-Header"]
@@ -65,13 +65,13 @@ services:
       - name: booking-payment-route
         paths:
           - /api/v1/reservations
-        methods: [GET, POST, PUT, DELETE]
+        methods: [GET, POST, PUT, DELETE, OPTIONS]
         strip_path: true
         preserve_host: false
         plugins:
           - name: cors
             config:
-              origins: ["*"]
+              origins: ["http://localhost:5173"]
               methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
               headers: ["Accept", "Authorization", "Content-Type"]
               exposed_headers: ["X-Custom-Header"]
