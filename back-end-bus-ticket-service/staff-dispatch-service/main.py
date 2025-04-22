@@ -32,4 +32,4 @@ def assign_dispatch(user_data: dict = Depends(check_role("dispatcher"))):
         "user_data": user_data
     }
 
-app.include_router(dispatch_router, prefix="/dispatch-assignments")
+app.include_router(dispatch_router)

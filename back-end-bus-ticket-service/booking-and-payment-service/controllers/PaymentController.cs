@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 namespace booking_and_payment_service.controllers
 {
     [ApiController]
-    [Route("api/payment")]
+    [Route("payment")]
     public class PaymentController : ControllerBase
     {
         private readonly PaymentService _paymentService;

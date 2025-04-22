@@ -7,7 +7,7 @@ services:
     routes:
       - name: user-management-route
         paths:
-          - /api/v1/auth
+          - /api/v1/identity
         methods: [GET, POST, PUT, DELETE]
         strip_path: true
         preserve_host: false
@@ -26,7 +26,7 @@ services:
     routes:
       - name: staff-dispatch-route
         paths:
-          - /api/v1/dispatch
+          - /api/v1/dispatch-assignments
         methods: [GET, POST, PUT, DELETE]
         strip_path: true
         preserve_host: false
@@ -45,7 +45,7 @@ services:
     routes:
       - name: route-trip-management-route
         paths:
-          - /api/v1/trip
+          - /api/v1/journeys
         methods: [GET, POST, PUT, DELETE]
         strip_path: true
         preserve_host: false
@@ -64,7 +64,7 @@ services:
     routes:
       - name: booking-payment-route
         paths:
-          - /api/v1/payment
+          - /api/v1/reservations
         methods: [GET, POST, PUT, DELETE]
         strip_path: true
         preserve_host: false

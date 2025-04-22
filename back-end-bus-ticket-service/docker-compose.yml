@@ -68,16 +68,18 @@ services:
     env_file:
       - ./notification-service/.env.prod
     depends_on:
-      - rabbitmq-bus
+      - rabbitmq
     ports:
       - "9504:9504"
-    celery_worker:
-      build: .
-      command: celery -A celery_worker worker --loglevel=info
-      env_file:
-        - ./notification-service/.env.prod
-      depends_on:
-        - rabbitmq-bus
+
+  celery-worker:
+    build: .
+    command: celery -A celery_worker worker --loglevel=info
+    env_file:
+      - ./notification-service/.env.prod
+    depends_on:
+      - notification-service
+      - rabbitmq
 
   redis-server:
     image: redis

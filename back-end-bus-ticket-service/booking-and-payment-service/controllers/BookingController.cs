@@ -9,7 +9,7 @@ using booking_and_payment_service.dtos;
 namespace booking_and_payment_service.controllers
 {
     [ApiController]
-    [Route("api/bookings")]
+    [Route("bookings")]
     public class BookingController : ControllerBase
     {
         private readonly BookingService _bookingService;
