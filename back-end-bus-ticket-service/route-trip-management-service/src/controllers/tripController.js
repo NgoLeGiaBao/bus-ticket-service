@@ -21,6 +21,27 @@ exports.getTripsController = async (req, res) => {
     }
 };
 
+// Get all available trips based on route id
+exports.getAvailableTripsController = async (req, res) => {
+    try {
+        const { from, to, tripDate } = req.query;
+
+        const result = await tripService.getAvailableTripsService(from, to, tripDate);
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error.',
+            data: null,
+            error: err.message
+        });
+    }
+};
+
 // Get a specific trip by ID
 exports.getTripByIdController = async (req, res) => {
     try {

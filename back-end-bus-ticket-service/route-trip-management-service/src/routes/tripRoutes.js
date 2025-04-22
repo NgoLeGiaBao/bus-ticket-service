@@ -10,6 +10,10 @@ router.post('/trips', verifyToken, verifyRole('Admin'), TripController.createTri
 // Get all trips
 router.get('/trips', TripController.getTripsController);
 
+// Get all available trips based on route id
+router.get('/available-trips', TripController.getAvailableTripsController);
+
+
 // Get a trip by ID
 router.get('/trips/:id', TripController.getTripByIdController);
 

@@ -13,7 +13,7 @@ startConsumers();
 const app = express();
 app.use(express.json());
 
-app.use('/api', routeRoutes);
-app.use('/api', tripRoutes);
+app.use(routeRoutes);
+app.use(tripRoutes);
 
 app.listen(9502, () => console.log('Server running on port 9502'));

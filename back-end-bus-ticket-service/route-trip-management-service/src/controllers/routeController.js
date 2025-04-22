@@ -22,6 +22,69 @@ const getRoutesController = async (req, res) => {
     }
 };
 
+// Get all destinations
+// Controller function to handle the route for fetching all origins and destinations
+const getAllDestinationsController = async (req, res) => {
+    try {
+        // Gọi service để lấy tất cả điểm đi và điểm đến trong một tập hợp chung
+        const result = await routeService.getAllDestinationsService();
+
+        if (result.success) {
+            // Trả về kết quả thành công
+            res.status(200).json(result);
+        } else {
+            // Trả về lỗi nếu có
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        // Lỗi bất ngờ
+        res.status(500).json({
+            success: false,
+            message: 'An unexpected error occurred.',
+            data: null,
+            error: error.message,
+        });
+    }
+};
+
+// Controller function to handle the route for fetching destinations from a specific origin
+const getDestinationsFromOriginController = async (req, res) => {
+    try {
+        // Lấy origin từ query parameters
+        const { origin } = req.query;
+
+        // Kiểm tra nếu không có origin
+        if (!origin) {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing required query parameter: origin',
+                data: null,
+                error: 'Bad Request'
+            });
+        }
+
+        // Call service to fetch destinations
+        const result = await routeService.getDestinationsFromOriginService(origin);
+
+        if (result.success) {
+            // Send success response with data
+            res.status(200).json(result);
+        } else {
+            // Send error response if something went wrong
+            res.status(400).json(result);
+        }
+    } catch (error) {
+        // Catch unexpected errors and return a generic error response
+        res.status(500).json({
+            success: false,
+            message: 'An unexpected error occurred.',
+            data: null,
+            error: error.message,
+        });
+    }
+};
+
+
 // Get route by ID
 const getRouteByIdController = async (req, res) => {
     const { id } = req.params;
@@ -73,4 +136,6 @@ module.exports = {
     getRouteByIdController,
     updateRouteController,
     deleteRouteController,
+    getDestinationsFromOriginController,
+    getAllDestinationsController
 };

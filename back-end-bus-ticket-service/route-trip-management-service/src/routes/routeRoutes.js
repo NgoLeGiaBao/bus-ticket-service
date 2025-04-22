@@ -10,6 +10,12 @@ router.post('/routes', verifyToken, verifyRole('Admin'), RouteController.createR
 // Get all routes
 router.get('/routes', RouteController.getRoutesController);
 
+// Get all destinations (origin and destination)
+router.get('/destinations/all', RouteController.getAllDestinationsController);
+
+// Get all routes by origin and destination
+router.get('/destinations', RouteController.getDestinationsFromOriginController);
+
 // Get a route by ID
 router.get('/routes/:id', verifyToken, RouteController.getRouteByIdController);
 
