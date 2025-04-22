@@ -31,12 +31,38 @@ namespace user_management_service.services {
             {
                 Id = Guid.NewGuid(),
                 Username = request.Username,
-                Email = "",
+                Email = request.Email== null ? null : request.Email,
                 PhoneNumber = request.PhoneNumber,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
             };
 
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Find or create the 'customer' role
+            var customerRole = await _context.Roles
+                .FirstOrDefaultAsync(r => r.Name == "Customer");
+
+            // If the role doesn't exist, create it
+            if (customerRole == null)
+            {
+                customerRole = new Role
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Customer"
+                };
+                _context.Roles.Add(customerRole);
+                await _context.SaveChangesAsync();
+            }
+
+            // Assign the user to the 'customer' role
+            var userRole = new UserRole
+            {
+                UserId = user.Id,
+                RoleId = customerRole.Id
+            };
+
+            _context.UserRoles.Add(userRole);
             await _context.SaveChangesAsync();
 
             return new ApiResponse<User>(true, "User registered successfully", user, null);

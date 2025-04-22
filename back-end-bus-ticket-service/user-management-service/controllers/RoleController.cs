@@ -8,7 +8,7 @@ using user_management_service.dtos;
 
 namespace user_management_service.controllers
 {
-    [Route("api/roles")]
+    [Route("roles")]
     [ApiController]
     [Authorize]
     public class RolesController : ControllerBase

@@ -11,10 +11,10 @@ namespace user_management_service.models {
         public Guid UserId { get; set; }
     
         [Required]
-        public string Token { get; set; } // Token reset mật khẩu
+        public string Token { get; set; } 
     
         [Required]
-        public DateTime ExpiresAt { get; set; } // Hạn dùng của token
+        public DateTime ExpiresAt { get; set; } 
     
         public bool Used { get; set; } = false;
     

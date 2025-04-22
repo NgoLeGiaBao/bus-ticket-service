@@ -12,7 +12,7 @@ using user_management_service.data;
 namespace user_management_service.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250331193105_User_Management_V01")]
+    [Migration("20250422101811_User_Management_V01")]
     partial class User_Management_V01
     {
         /// <inheritdoc />
