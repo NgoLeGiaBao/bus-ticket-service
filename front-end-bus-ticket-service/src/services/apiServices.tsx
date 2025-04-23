@@ -75,3 +75,13 @@ export const getAvailableTrips = async (from: string, to: string, tripDate: stri
     throw new Error(error?.response?.data?.message || "Failed to fetch available trips");
   }
 };
+
+// Get trip by ID
+export const getTripById = async (tripId: string): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<AvailableTripResponse>>(`/journeys/trips/${tripId}`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch trip details");
+  }
+};

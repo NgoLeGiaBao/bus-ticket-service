@@ -130,7 +130,7 @@ function TravelScheduleInfo() {
 				  
                   <td className="px-4 py-5 text-center">
                     <NavLink
-                      to={`/dat-ve?id=${v.id}`}
+                      to={`/booking-ticket?id=${v.id}`}
                       className="inline-block text-sm font-semibold text-white hover:bg-red-600 transition-all 
                       bg-gradient-to-r from-red-500 to-orange-500 py-2 px-4 rounded-full shadow-sm"
                     >
