@@ -1,118 +1,78 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-// import { API_URL } from '../configs/env';
 import { useNavigate } from 'react-router-dom';
-// import CustomerAccountUpdateModal from './CustomerAccountUpdateModal';
-// import SuccessNotification from './Noti/SuccessNotification';
-// import FailureNotification from './Noti/FailureNotification';
-// import CustomerChangePasswordModal from './CustomerChangePasswordModal';
 
-// import { imageDB } from '../configs/firebase';
-// import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { v4 } from 'uuid';
+import FailureNotification from './FailureNotification';
+import SuccessNotification from './SuccessNotification';
+import CustomerAccountUpdateModal from './CustomerAccountUpdateModal';
+import CustomerChangePasswordModal from './CustomerChangePasswordModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../store/userSlice';
+import { postLogout } from '../services/apiServices';
 
-// Customer type
-interface Customer {
-	id?: number;
-	first_name?: string;
-	last_name?: string;
-	email?: string;
-	gender?: number;
-	address?: string;
-	phone_number?: string;
-	date_of_birth?: string;
-	avatar?: string;
-}
 
 const ProfileManagementForm: React.FC = () => {
 	const navigate = useNavigate();
+	const dispatch = useDispatch();
+	
+	
+	const user = useSelector((state: any) => state.user.account);
+	const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
 
-	const [customer, setCustomer] = useState<Customer>({});
 	const [successModal, setSuccessModal] = useState<boolean>(false);
 	const [failureModal, setFailureModal] = useState<boolean>(false);
 	const [changePasswordModal, setChangePasswordModal] = useState<boolean>(false);
 	const [modelUpdate, setUpdateModal] = useState<boolean>(false);
 	const [message, setMessage] = useState<string>('');
 
-	const [avatar, setAvatar] = useState<string>(
-		'https://images.unsplash.com/photo-1618500299034-abce7ed0e8df?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-	);
-
 	useEffect(() => {
-		refresh();
+		if (!isAuthenticated) {
+			navigate('/login');
+		}
 	}, []);
 
-	const refresh = () => {
-		const token = sessionStorage.getItem('token');
-		if (token) {
-			axios
-				.get(API_URL + 'customer/me', { headers: { Authorization: `Bearer ${token}` } })
-				.then(async (res) => {
-					await renderAvatar(res.data.customer);
-					setCustomer(res.data.customer);
-				})
-				.catch(() => {
-					navigate('/login');
-				});
-		}
-	};
 
-	const renderAvatar = async (employee: Customer) => {
-		if (employee.avatar) {
-			const downloadURL = await getDownloadURL(ref(imageDB, employee.avatar));
-			setAvatar(downloadURL);
-		}
-	};
-
-	const logout = async () => {
-		const token = sessionStorage.getItem('token');
-		if (token) {
-			await axios
-				.get(API_URL + 'customer/logout', { headers: { Authorization: `Bearer ${token}` } })
-				.then((res) => {
-					if (res.status === 200) {
-						navigate('/');
-						window.location.reload();
-					}
-				})
-				.catch((error) => {
-					console.error(error);
-				});
+	const handleLogout = async () => {
+		const res = await postLogout();
+		if (res.success) {
+			dispatch(logout());
+			localStorage.removeItem('persist:user');
+			localStorage.removeItem('token');
+			navigate('/');
 		}
 	};
 
 	const openChangePasswordModal = () => setChangePasswordModal(true);
 
 	const handleChangeAvatar = async (file: File) => {
-		const url = `avatars/${v4()}`;
-		const imageRef = ref(imageDB, url);
-		await uploadBytes(imageRef, file);
+		// const url = `avatars/${v4()}`;
+		// const imageRef = ref(imageDB, url);
+		// await uploadBytes(imageRef, file);
 
-		const data = { avatar: url };
-		const token = sessionStorage.getItem('token');
+		// const data = { avatar: url };
+		// const token = sessionStorage.getItem('token');
 
-		if (token) {
-			axios
-				.put(API_URL + 'customer/change-avatar', data, { headers: { Authorization: `Bearer ${token}` } })
-				.then(async (res) => {
-					setMessage(res.data.message);
-					openSuccessModal();
-					if (customer.avatar) {
-						const oldImageRef = ref(imageDB, customer.avatar);
-						await deleteObject(oldImageRef);
-					}
-					refresh();
-				})
-				.catch((err) => {
-					if (err.response?.status === 401) {
-						navigate('/login');
-					}
-					setMessage(err.response?.data?.message || 'Đã có lỗi xảy ra');
-					openFailureModal();
-				});
-		} else {
-			navigate('/login');
-		}
+		// if (token) {
+		// 	axios
+		// 		.put(API_URL + 'customer/change-avatar', data, { headers: { Authorization: `Bearer ${token}` } })
+		// 		.then(async (res) => {
+		// 			setMessage(res.data.message);
+		// 			openSuccessModal();
+		// 			if (customer.avatar) {
+		// 				const oldImageRef = ref(imageDB, customer.avatar);
+		// 				await deleteObject(oldImageRef);
+		// 			}
+		// 			refresh();
+		// 		})
+		// 		.catch((err) => {
+		// 			if (err.response?.status === 401) {
+		// 				navigate('/login');
+		// 			}
+		// 			setMessage(err.response?.data?.message || 'Đã có lỗi xảy ra');
+		// 			openFailureModal();
+		// 		});
+		// } else {
+		// 	navigate('/login');
+		// }
 	};
 
 	const closeUpdateModal = () => setUpdateModal(false);
@@ -126,7 +86,7 @@ const ProfileManagementForm: React.FC = () => {
 		<div className="flex-1">
 			<div className="flex flex-col-reverse md:flex-row w-full lg:w-[80%] 2xl:w-[60%] mx-auto p-5 gap-y-8 md:gap-x-8 my-8">
 				<div className="flex basis-1/4 border border-slate-300 p-2 flex-col rounded-xl">
-					{/* <div className="flex flex-row p-2 mb-2 items-center hover:bg-slate-100 cursor-pointer">
+					<div className="flex flex-row p-2 mb-2 items-center hover:bg-slate-100 cursor-pointer">
 						<div className="basis-1/4">
 							<img
 								src="https://futabus.vn/images/header/profile/futaPay.svg"
@@ -161,7 +121,7 @@ const ProfileManagementForm: React.FC = () => {
 							/>
 						</div>
 						<div className="basis-3/4 ml-3">Địa chỉ của bạn</div>
-					</div> */}
+					</div>
 					<div
 						className="flex flex-row p-2 mb-2 items-center hover:bg-slate-100 cursor-pointer"
 						onClick={openChangePasswordModal}
@@ -183,7 +143,7 @@ const ProfileManagementForm: React.FC = () => {
 						</div>
 						<div
 							className="basis-3/4 ml-3"
-							onClick={logout}
+							onClick={handleLogout}
 						>
 							Đăng xuất
 						</div>
@@ -196,7 +156,7 @@ const ProfileManagementForm: React.FC = () => {
 						<div className="basis-1/3 flex flex-col p-2">
 							<div className="flex justify-center mx-auto md:mx-0">
 								<img
-									src={avatar}
+									src={user.avatarUrl}
 									alt="avatar"
 									className="aspect-square max-w-[200px] rounded-full object-cover"
 								/>
@@ -224,43 +184,43 @@ const ProfileManagementForm: React.FC = () => {
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Họ</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.last_name}</span>
+									: <span className="ml-3">{user.username?.trim().split(' ').slice(0, -1).join(' ')}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Tên</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.first_name}</span>
+									: <span className="ml-3">{user.username?.trim().split(' ').slice(-1)}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Số điện thoại</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.phone_number}</span>
+									: <span className="ml-3">{user.phone_number}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Giới tính</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.gender === 0 ? 'Nữ' : 'Nam'}</span>
+									: <span className="ml-3">{user.gender === 0 ? 'Nữ' : 'Nam'}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Email</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.email}</span>
+									: <span className="ml-3">{user.email}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Ngày sinh</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.date_of_birth}</span>
+									: <span className="ml-3">{user.date_of_birth}</span>
 								</div>
 							</div>
 							<div className="flex flex-row mb-3 items-center">
 								<div className="basis-1/3 text-slate-500">Địa chỉ</div>
 								<div className="basis-2/3">
-									: <span className="ml-3">{customer.address}</span>
+									: <span className="ml-3">{user.address}</span>
 								</div>
 							</div>
 							<div

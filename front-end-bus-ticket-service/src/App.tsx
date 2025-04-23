@@ -12,6 +12,7 @@ import SignupPage from './pages/Customer/SignUpPage';
 import LookUpPage from './pages/Customer/LookUpPage';
 import BookingTicketPage from './pages/Customer/BookingTicketPage';
 import ForgotPasswordPage from './pages/Customer/ForgotPasswordPage';
+import ProfileManagementForm from './components/ProfileManagementForm';
 // import AdminDashboard from './pages/Admin/Dashboard';
 
 // Public Layout: Navbar + Footer
@@ -80,13 +81,19 @@ function App() {
             <ForgotPasswordPage />
           </>
         }/>
-        <Route path ='/dat-ve' element={
+        <Route path ='/booking-ticket' element={
           <>
             <PageTitle title="Đặt vé"/>
             <BookingTicketPage />
           </>
         }/>
+        <Route path ='/account' element={
+          <>  
+            <PageTitle title="Quản lý tài khoản"/>
+            <ProfileManagementForm />
+          </>
 
+        }/>
       </Route>
 
       {/* Admin layout routes */}

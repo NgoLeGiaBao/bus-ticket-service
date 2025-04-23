@@ -6,42 +6,38 @@ import { useSelector } from 'react-redux';
 // import { getDownloadURL, ref } from 'firebase/storage';
 // import { imageDB } from '../configs/firebase';
 
-interface Customer {
-  id?: string;
-  first_name?: string;
-  last_name?: string;
-  avatar?: string;
-}
-
-function Navbar() {
-  const [customer, setCustomer] = useState<Customer>({});
-  const [avatar, setAvatar] = useState<string>(
-    'https://images.unsplash.com/photo-1618500299034-abce7ed0e8df?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-  );
-
-  useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      axios
-        .get(`${API_URL}customer/me`, { headers: { Authorization: `Bearer ${token}` } })
-        .then(async (res) => {
-          await renderAvatar(res.data.customer);
-          setCustomer(res.data.customer);
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  const renderAvatar = async (user: Customer) => {
-    if (user.avatar) {
-      const url = await getDownloadURL(ref(imageDB, user.avatar));
-      setAvatar(url);
-    }
-  };
+const Navbar: React.FC = () => {
   const user = useSelector((state: any) => state.user.account);
   const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
-  console.log('user', user);
-  console.log('isAuthenticated', isAuthenticated);
+  
+  // const [customer, setCustomer] = useState<Customer>({});
+  // const [avatar, setAvatar] = useState<string>(
+  //   'https://images.unsplash.com/photo-1618500299034-abce7ed0e8df?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+  // );
+
+  // useEffect(() => {
+  //   const token = sessionStorage.getItem('token');
+  //   if (token) {
+  //     axios
+  //       .get(`${API_URL}customer/me`, { headers: { Authorization: `Bearer ${token}` } })
+  //       .then(async (res) => {
+  //         await renderAvatar(res.data.customer);
+  //         setCustomer(res.data.customer);
+  //       })
+  //       .catch(() => {});
+  //   }
+  // }, []);
+
+  // const renderAvatar = async (user: Customer) => {
+  //   if (user.avatar) {
+  //     const url = await getDownloadURL(ref(imageDB, user.avatar));
+  //     setAvatar(url);
+  //   }
+  // };
+  // const user = useSelector((state: any) => state.user.account);
+  // const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
+  // console.log('user', user);
+  // console.log('isAuthenticated', isAuthenticated);
   return (
     <nav className="bg-white w-full z-20 top-0 start-0 border-b border-gray-200">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
@@ -55,7 +51,7 @@ function Navbar() {
         </NavLink>
 
         <div className="flex lg:order-2 space-x-3 lg:space-x-0 rtl:space-x-reverse">
-          {!customer.id ? (
+          {!isAuthenticated ? (
             <NavLink
               to="login"
               className="lg:hidden text-white bg-red-500 hover:bg-red-600 font-medium rounded-lg text-sm px-4 py-2 text-center"
@@ -79,15 +75,15 @@ function Navbar() {
               className="lg:hidden text-white bg-red-500 hover:bg-red-600 font-medium rounded-lg text-sm px-4 py-2 text-center"
             >
               <div className="flex items-center justify-center">
-                <img src={avatar} alt="avatar" className="w-6 aspect-square rounded-full object-cover" />
+                {/* <img src={user.avatarUrl} alt="avatar" className="w-6 aspect-square rounded-full object-cover" /> */}
                 <span className="ml-2 hidden sm:block">
-                  {customer.first_name} {customer.last_name}
+                  {user.username}
                 </span>
               </div>
             </NavLink>
           )}
 
-          {!customer.id ? (
+          {!isAuthenticated ? (
             <NavLink
               to="login"
               className="hidden lg:flex text-white bg-red-500 hover:bg-red-600 font-medium rounded-lg text-sm px-4 py-2 text-center"
@@ -99,9 +95,9 @@ function Navbar() {
               to="/account"
               className="hidden lg:flex text-white bg-red-500 hover:bg-red-600 font-medium rounded-lg text-sm px-4 py-2 text-center"
             >
-              <img src={avatar} alt="avatar" className="mr-2 w-6 aspect-square rounded-full object-cover" />
+              {/* <img src={user.avatarUrl} alt="avatar" className="mr-2 w-6 aspect-square rounded-full object-cover" /> */}
               <span className="hidden sm:block">
-                {customer.first_name} {customer.last_name}
+                {user.username}
               </span>
             </NavLink>
           )}

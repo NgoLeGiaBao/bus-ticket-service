@@ -26,6 +26,8 @@ instance.interceptors.response.use(
       const { status, data } = error.response;
       if (status === 401 || data?.EC === -999) {
         const navigate = useNavigate();
+        localStorage.removeItem("token");
+        localStorage.removeItem('persist:user');
         navigate("/login");
       }
     }

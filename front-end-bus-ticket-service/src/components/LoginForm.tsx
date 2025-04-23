@@ -4,13 +4,15 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import HomePromotion from './HomePromotion';
 import { LoginParams } from '../interfaces/Auth';
 import { postLogin } from '../services/apiServices';
-import { useDispatch } from 'react-redux';
-import { logout, setUser } from '../store/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser } from '../store/userSlice';
 
 const LoginForm: React.FC = () => {
 
 	const navigate = useNavigate();
 	const dispatch = useDispatch();
+	const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
+
 	// Notification
 	const [message, setMessage] = useState<string>('');
 
@@ -19,26 +21,14 @@ const LoginForm: React.FC = () => {
 	const [password, setPassword] = useState<string>('');
 
 	// Check logged in
-	// useEffect(() => {
-	// 	const token = sessionStorage.getItem('token');
-	// 	if (token) {
-	// 		axios
-	// 			.get(`${API_URL}customer/me`, {
-	// 				headers: { Authorization: `Bearer ${token}` },
-	// 			})
-	// 			.then(() => {
-	// 				navigate('/');
-	// 			})
-	// 			.catch(() => {
-	// 				navigate('/login');
-	// 			});
-	// 	}
-	// }, [navigate]);
+	useEffect(() => {
+		if (isAuthenticated) {
+			navigate('/');
+		}
+	}, [navigate]);
 
 	// Login
 	const submitLogin = async () => {
-		// dispatch(logout()); // Xoá state trong redux
-		// localStorage.removeItem('persist:user');
 		const data : LoginParams = {
 			phoneNumber: phone_number,
 			password,
@@ -47,12 +37,9 @@ const LoginForm: React.FC = () => {
 		try {
 			const res = await postLogin(data);
 			if (res.success) {
-				console.log(res.data);
-
-				// sessionStorage.setItem('token', res.data.data.accessToken);
-				// sessionStorage.setItem('refreshToken', res.data.data.refreshToken);
+				localStorage.setItem('token', res.data.accessToken);
 				dispatch(setUser(res.data));
-				// navigate('/');
+				navigate('/');
 			} else {
 				setMessage("Số điện thoại hoặc mật khẩu không chính xác");
 			}
