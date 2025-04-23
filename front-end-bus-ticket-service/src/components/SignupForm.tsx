@@ -1,22 +1,11 @@
-/** @format */
-
-import React, { useState } from 'react';
-import axios from 'axios';
-import HomePromotion from './HomePromotion';
+import { useState } from 'react';
 import { RegisterParams } from '../interfaces/Auth';
-import { postLogin, postRegister } from '../services/apiServices';
-
-// Define the types for the state variables
-interface SignupFormData {
-  last_name: string;
-  first_name: string;
-  phone_number: string;
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
+import { postRegister } from '../services/apiServices';
+import { useNavigate } from 'react-router-dom';
 
 function SignupForm() {
+    const navigate = useNavigate();
+
   // Notification
   const [message, setMessage] = useState<string>('');
 
@@ -38,41 +27,15 @@ function SignupForm() {
     };
     try {
       const res = await postRegister(data);
-      console.log(res);
       if (res.success) {
-        setMessage(res.message);
-      }
+        setMessage("Đăng ký thành công, vui lòng đăng nhập");
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000); 
+      } 
     } catch (err: any) {
-      console.log(err.response.data);
-      handleMessage(err.response.data.message);
-    }
-  };
+      setMessage('Số điện thoại hoặc email đã tồn tại');
 
-  // Convert response to message
-  const handleMessage = (message: string) => {
-    if (message.includes('email')) {
-      setMessage('Email đã tồn tại');
-      return;
-    }
-    if (message.includes('password')) {
-      setMessage('Mật khẩu không hợp lệ');
-      return;
-    }
-    if (message.includes('first_name')) {
-      setMessage('Họ không hợp lệ');
-      return;
-    }
-    if (message.includes('last_name')) {
-      setMessage('Tên không hợp lệ');
-      return;
-    }
-    if (message.includes('phone_number')) {
-      setMessage('Số điện thoại không hợp lệ');
-      return;
-    }
-    if (message.includes('password_confirmation')) {
-      setMessage('Xác nhận mật khẩu không hợp lệ');
-      return;
     }
   };
 
@@ -266,7 +229,7 @@ function SignupForm() {
           </div>
         </div>
         <div className="hidden sm:block flex-grow mx-4">
-          <img src="images/promotion.jpg" alt="Promotion" className="h-full w-full object-cover" />
+          <img src="https://cdn.futabus.vn/futa-busline-cms-dev/TVC_00aa29ba5b/TVC_00aa29ba5b.svg" alt="Promotion" className="h-full w-full object-cover" />
         </div>
       </div>
     </div>

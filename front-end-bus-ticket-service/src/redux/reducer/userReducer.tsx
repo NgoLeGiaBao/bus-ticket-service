@@ -7,11 +7,13 @@ const INITIAL_STATE = {
         username: '',
         email: '',
         image: '',
-        role: ''
+        phone_number: '',
+        role: []
     },
     isAuthenticated: false
 }
-const userReducer = (state = INITIAL_STATE, action) => {
+
+const userReducer = (state = INITIAL_STATE, action: any) => {
     switch (action.type) {
         case FETCH_USER_LOGIN_SUCCESS:
             const data = action?.payload?.DT
@@ -20,10 +22,11 @@ const userReducer = (state = INITIAL_STATE, action) => {
                 account: {
                     access_token: data?.access_token,
                     refresh_token: data?.refresh_token,
+                    phone_number: data?.phone_number,
                     username: data?.username,
                     email: data?.email,
                     image: data?.image,
-                    role: data?.role
+                    role: Array.isArray(data?.role) ? data?.role : [data?.role]
                 },
                 isAuthenticated: true
             }
@@ -36,7 +39,8 @@ const userReducer = (state = INITIAL_STATE, action) => {
                     username: '',
                     email: '',
                     image: '',
-                    role: ''
+                    phone_number: '',
+                    role: []
                 },
                 isAuthenticated: false
             }

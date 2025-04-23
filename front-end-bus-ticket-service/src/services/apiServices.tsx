@@ -6,7 +6,7 @@ import axios from "../utils/axiosCustomize"
 export const postLogin = async (params: LoginParams): Promise<AuthResponse> => {
     try {
       const response = await axios.post<AuthResponse>("/identity/auth/login", params);
-      return response.data;
+      return response
     } catch (error: any) {
       throw new Error(error?.response?.data?.message || "Login failed");
     }
@@ -16,7 +16,7 @@ export const postLogin = async (params: LoginParams): Promise<AuthResponse> => {
 export const postRegister = async (params: RegisterParams): Promise<AuthResponse> => {
     try {
       const response = await axios.post<AuthResponse>("/identity/auth/register", params);
-      return response.data;
+      return response;
     } catch (error: any) {
       throw new Error(error?.response?.data?.message || "Registration failed");
     }
@@ -26,7 +26,7 @@ export const postRegister = async (params: RegisterParams): Promise<AuthResponse
 export const postLogout = async (): Promise<AuthResponse> => {
     try {
       const response = await axios.post<AuthResponse>("/identity/auth/logout");
-      return response.data; 
+      return response
     } catch (error: unknown) {
       if (error instanceof Error) {
         // Xử lý lỗi nếu có

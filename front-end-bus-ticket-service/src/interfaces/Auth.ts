@@ -19,7 +19,7 @@ export interface User {
   }
   
   export interface LoginParams {
-    username: string;
+    phoneNumber: string;
     password: string;
   }
   

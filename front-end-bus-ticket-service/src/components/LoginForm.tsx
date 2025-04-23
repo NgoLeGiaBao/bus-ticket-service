@@ -1,13 +1,16 @@
 /** @format */
-
-import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import HomePromotion from './HomePromotion';
+import { LoginParams } from '../interfaces/Auth';
+import { postLogin } from '../services/apiServices';
+import { useDispatch } from 'react-redux';
+import { logout, setUser } from '../store/userSlice';
 
 const LoginForm: React.FC = () => {
-	const navigate = useNavigate();
 
+	const navigate = useNavigate();
+	const dispatch = useDispatch();
 	// Notification
 	const [message, setMessage] = useState<string>('');
 
@@ -16,37 +19,44 @@ const LoginForm: React.FC = () => {
 	const [password, setPassword] = useState<string>('');
 
 	// Check logged in
-	useEffect(() => {
-		const token = sessionStorage.getItem('token');
-		if (token) {
-			axios
-				.get(`${API_URL}customer/me`, {
-					headers: { Authorization: `Bearer ${token}` },
-				})
-				.then(() => {
-					navigate('/');
-				})
-				.catch(() => {
-					navigate('/login');
-				});
-		}
-	}, [navigate]);
+	// useEffect(() => {
+	// 	const token = sessionStorage.getItem('token');
+	// 	if (token) {
+	// 		axios
+	// 			.get(`${API_URL}customer/me`, {
+	// 				headers: { Authorization: `Bearer ${token}` },
+	// 			})
+	// 			.then(() => {
+	// 				navigate('/');
+	// 			})
+	// 			.catch(() => {
+	// 				navigate('/login');
+	// 			});
+	// 	}
+	// }, [navigate]);
 
 	// Login
 	const submitLogin = async () => {
-		const data = {
-			phone_number,
+		// dispatch(logout()); // Xoá state trong redux
+		// localStorage.removeItem('persist:user');
+		const data : LoginParams = {
+			phoneNumber: phone_number,
 			password,
 		};
 
 		try {
-			const res = await axios.post(`${API_URL}customer/login`, data);
-			if (res.status === 200) {
-				sessionStorage.setItem('token', res.data.token);
-				window.location.href = REACT_URL;
+			const res = await postLogin(data);
+			if (res.success) {
+				console.log(res.data);
+
+				// sessionStorage.setItem('token', res.data.data.accessToken);
+				// sessionStorage.setItem('refreshToken', res.data.data.refreshToken);
+				dispatch(setUser(res.data));
+				// navigate('/');
+			} else {
+				setMessage("Số điện thoại hoặc mật khẩu không chính xác");
 			}
 		} catch (err: any) {
-			console.log(err?.response?.data);
 			setMessage('Mật khẩu hoặc tài khoản không chính xác');
 		}
 	};
@@ -101,6 +111,7 @@ const LoginForm: React.FC = () => {
 								}}
 								onKeyDown={(event) => {
 									if (event.key === 'Enter') {
+										event.preventDefault();
 										submitLogin();
 									}
 								}}

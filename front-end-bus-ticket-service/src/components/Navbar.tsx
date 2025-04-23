@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 // import { API_URL } from '../configs/env';
 import { NavLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 // import { getDownloadURL, ref } from 'firebase/storage';
 // import { imageDB } from '../configs/firebase';
 
@@ -37,7 +38,10 @@ function Navbar() {
       setAvatar(url);
     }
   };
-
+  const user = useSelector((state: any) => state.user.account);
+  const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated);
+  console.log('user', user);
+  console.log('isAuthenticated', isAuthenticated);
   return (
     <nav className="bg-white w-full z-20 top-0 start-0 border-b border-gray-200">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
