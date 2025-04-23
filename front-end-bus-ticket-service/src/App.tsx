@@ -13,6 +13,7 @@ import LookUpPage from './pages/Customer/LookUpPage';
 import BookingTicketPage from './pages/Customer/BookingTicketPage';
 import ForgotPasswordPage from './pages/Customer/ForgotPasswordPage';
 import ProfileManagementForm from './components/ProfileManagementForm';
+import TravelSchedulePage from './pages/Customer/TravelSchedulePage';
 // import AdminDashboard from './pages/Admin/Dashboard';
 
 // Public Layout: Navbar + Footer
@@ -92,7 +93,13 @@ function App() {
             <PageTitle title="Quản lý tài khoản"/>
             <ProfileManagementForm />
           </>
-
+        }/>
+        <Route path ='/search-trip' element={
+          <>  
+            <PageTitle title="Tìm kiếm chuyến đi"/>
+            <TravelSchedulePage />
+          </>
+        
         }/>
       </Route>
 

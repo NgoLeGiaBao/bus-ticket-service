@@ -36,6 +36,7 @@ const ProfileManagementForm: React.FC = () => {
 		if (res.success) {
 			dispatch(logout());
 			localStorage.removeItem('persist:user');
+			localStorage.removeItem('persist:root');
 			localStorage.removeItem('token');
 			navigate('/');
 		}
@@ -172,7 +173,7 @@ const ProfileManagementForm: React.FC = () => {
 									type="file"
 									accept=".jpg,.png"
 									id="image"
-									onChange={(e) => handleChangeAvatar(e.target.files[0])}
+									onChange={(e:any) => handleChangeAvatar(e.target.files[0])}
 									className="hidden"
 								/>
 							</div>

@@ -28,6 +28,7 @@ instance.interceptors.response.use(
         const navigate = useNavigate();
         localStorage.removeItem("token");
         localStorage.removeItem('persist:user');
+        localStorage.removeItem('persist:root');
         navigate("/login");
       }
     }

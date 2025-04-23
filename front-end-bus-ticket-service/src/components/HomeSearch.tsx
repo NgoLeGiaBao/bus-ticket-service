@@ -1,186 +1,207 @@
-/** @format */
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import FailureNotification from "./Noti/FailureNotification";
-import axios from "axios";
+// import axios from "axios";
+import { getAllDestinations, getDestinationsByOrigin} from "../services/apiServices";
+import FailureNotification from "./FailureNotification";
 
 const HomeSearch: React.FC = () => {
 	const navigate = useNavigate();
 
-	// Data
-	const [provinces, setProvinces] = useState<string[]>([]);
+	// State for destinations and origins
+	const [availableProvinces, setAvailableProvinces] = useState<string[]>([]);
+	const [availableDestinations, setAvailableDestinations] = useState<string[]>([]);
 
-	// Modal
-	const [failureModal, setFailureModal] = useState<boolean>(false);
-	const [startAddressSearchModal, setStartAddressSearchModal] = useState<boolean>(false);
-	const [endAddressSearchModal, setEndAddressSearchModal] = useState<boolean>(false);
-	const [message, setMessage] = useState<string>("");
+	// Modal state
+	const [failureModalVisible, setFailureModalVisible] = useState<boolean>(false);
+	const [startAddressSearchModalVisible, setStartAddressSearchModalVisible] = useState<boolean>(false);
+	const [endAddressSearchModalVisible, setEndAddressSearchModalVisible] = useState<boolean>(false);
+	const [errorMessage, setErrorMessage] = useState<string>("");
 
-	// Input
-	const [start_address, setStartAddress] = useState<string>("");
-	const [end_address, setEndAddress] = useState<string>("");
-	const [endAddressSearch, setEndAddressSearch] = useState<string>("");
-	const [startAddressSearch, setStartAddressSearch] = useState<string>("");
-	const [date, setDate] = useState<string>("");
+	// Input fields for search
+	const [selectedStartAddress, setSelectedStartAddress] = useState<string>("");
+	const [selectedEndAddress, setSelectedEndAddress] = useState<string>("");
+	const [startAddressSearchQuery, setStartAddressSearchQuery] = useState<string>("");
+	const [endAddressSearchQuery, setEndAddressSearchQuery] = useState<string>("");
+	const [tripDate, setTripDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
 	useEffect(() => {
-		getProvinces();
+		fetchProvinces();
 	}, []);
 
-	// Search Trip
-	const handleSearch = () => {
-		if (start_address && end_address && date) {
-			navigate(
-				`/search-trip?start_address=${start_address}&end_address=${end_address}&date=${date}`
-			);
+	// Handle trip search
+	const handleTripSearch = () => {
+		if (selectedStartAddress && selectedEndAddress && tripDate) {
+			navigate(`/search-trip?start_address=${selectedStartAddress}&end_address=${selectedEndAddress}&date=${tripDate}`);
 			window.location.reload();
 		} else {
-			setMessage("Vui lòng điền đầy đủ thông tin!");
-			openFailureModal();
+			setErrorMessage("Hãy chọn đầy đủ thông tin trước khi tìm kiếm chuyến đi!");
+			showFailureModal();
 		}
 	};
 
-	// Get Provinces API
-	const getProvinces = async () => {
+	// Fetch available provinces and destinations based on selected start address
+	const fetchProvinces = async () => {
 		try {
-			const res = await axios.get("https://provinces.open-api.vn/api/");
-			const cleaned = res.data.reduce((prev: string[], curr: any) => {
-				let name = curr.name.replace("Tỉnh", "").replace("Thành phố", "").trim();
-				prev.push(name);
-				return prev;
-			}, []);
-			setProvinces(cleaned);
+			const res = await getAllDestinations();
+			if (res.success && Array.isArray(res.data)) {
+				setAvailableProvinces(res.data);
+				setAvailableDestinations(res.data); // Default all destinations are the same as provinces
+			}
 		} catch (error) {
 			console.error("Failed to fetch provinces", error);
 		}
 	};
 
-	// Close & Open Modal
-	const closeFailureModal = () => setFailureModal(false);
-	const openFailureModal = () => setFailureModal(true);
+	// Fetch destinations by selected start address
+	const fetchDestinationsByOrigin = async (origin: string) => {
+		try {
+			const res = await getDestinationsByOrigin(origin);
+			if (res.success && Array.isArray(res.data)) {
+				setAvailableDestinations(res.data);
+			}
+		} catch (error) {
+			console.error("Failed to fetch destinations", error);
+		}
+	};
+
+	// Fetch origins by selected end address
+	const fetchOriginsByDestination = async (destination: string) => {
+		try {
+			const res = await getDestinationsByOrigin(destination);
+			if (res.success && Array.isArray(res.data)) {
+				setAvailableProvinces(res.data);
+			}
+		} catch (error) {
+			console.error("Failed to fetch origins", error);
+		}
+	};
+
+	// Modal visibility handlers
+	const closeFailureModal = () => setFailureModalVisible(false);
+	const showFailureModal = () => setFailureModalVisible(true);
 
 	return (
 		<>
 			<div className="mt-10 mb-20">
-				<h3 className="text-center text-2xl font-bold text-green-700 mb-5">LỰA CHỌN CHUYẾN ĐI</h3>
+				<h3 className="text-center text-2xl font-bold text-green-700 mb-5">TÌM KIẾM CHUYỂN ĐI</h3>
 				<hr className="w-4/5 mx-auto h-0.5 bg-gray-200 md:w-2/5 xl:w-1/5" />
 				<div className="max-w-screen-lg bg-white text-black mx-auto mt-10 p-6 border border-orange-400 shadow-xl rounded-xl flex flex-col md:flex-row items-end gap-4">
-  				{/* Start Address */}
-				<div className="input-search flex flex-col w-full md:basis-1/4">
-				    <label className="mb-2 font-medium text-gray-700">Điểm đi</label>
-				    <div className="rounded-lg relative">
-				      <div
-				        className="w-full h-12 px-4 flex items-center border border-gray-300 rounded-lg hover:border-orange-400 transition-colors cursor-pointer"
-				        onClick={() => setStartAddressSearchModal(true)}
-				      >
-				        <span className={start_address ? "" : "text-gray-400"}>
-				          {start_address || "Chọn điểm đi"}
-				        </span>
-				      </div>
-				      {startAddressSearchModal && (
-				        <div className="absolute z-10 top-14 left-0 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fadeIn">
-				          <div className="p-2 border-b">
-				            <input
-				              autoFocus
-				              value={startAddressSearch}
-				              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
-				              placeholder="Tìm điểm đi..."
-				              onChange={(e) => setStartAddressSearch(e.target.value)}
-				            />
-				          </div>
-				          <ul className="w-full overflow-y-auto max-h-60">
-				            {(startAddressSearch === "" ? provinces : provinces.filter((item) =>
-				              item.toLowerCase().includes(startAddressSearch.toLowerCase())
-				            )).map((item, i) => (
-				              <li
-				                key={i}
-				                className="px-4 py-2 hover:bg-orange-50 cursor-pointer transition-colors"
-				                onClick={() => {
-				                  setStartAddress(item);
-				                  setStartAddressSearchModal(false);
-				                }}
-				              >
-				                {item}
-				              </li>
-				            ))}
-				          </ul>
-				        </div>
-				      )}
-				    </div>
-				  </div>
-				  
-				  {/* End Address */}
-				  <div className="input-search flex flex-col w-full md:basis-1/4">
-				    <label className="mb-2 font-medium text-gray-700">Điểm đến</label>
-				    <div className="rounded-lg relative">
-				      <div
-				        className="w-full h-12 px-4 flex items-center border border-gray-300 rounded-lg hover:border-orange-400 transition-colors cursor-pointer"
-				        onClick={() => setEndAddressSearchModal(true)}
-				      >
-				        <span className={end_address ? "" : "text-gray-400"}>
-				          {end_address || "Chọn điểm đến"}
-				        </span>
-				      </div>
-				      {endAddressSearchModal && (
-				        <div className="absolute z-10 top-14 left-0 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fadeIn">
-				          <div className="p-2 border-b">
-				            <input
-				              autoFocus
-				              value={endAddressSearch}
-				              className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
-				              placeholder="Tìm điểm đến..."
-				              onChange={(e) => setEndAddressSearch(e.target.value)}
-				            />
-				          </div>
-				          <ul className="w-full overflow-y-auto max-h-60">
-				            {(endAddressSearch === "" ? provinces : provinces.filter((item) =>
-				              item.toLowerCase().includes(endAddressSearch.toLowerCase())
-				            )).map((item, i) => (
-				              <li
-				                key={i}
-				                className="px-4 py-2 hover:bg-orange-50 cursor-pointer transition-colors"
-				                onClick={() => {
-				                  setEndAddress(item);
-				                  setEndAddressSearchModal(false);
-				                }}
-				              >
-				                {item}
-				              </li>
-				            ))}
-				          </ul>
-				        </div>
-				      )}
-				    </div>
-				  </div>
-				  
-				  {/* Date */}
-				  <div className="input-search flex flex-col w-full md:basis-1/4">
-				    <label className="mb-2 font-medium text-gray-700">Ngày đi</label>
-				    <input
-				      value={date}
-				      min={new Date().toISOString().split('T')[0]}
-				      className="w-full h-12 px-4 border border-gray-300 rounded-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition-colors"
-				      type="date"
-				      onChange={(e) => setDate(e.target.value)}
-				    />
-				  </div>
-				  
-				  {/* Button */}
-				  <div className="w-full md:w-auto md:basis-1/4 mt-2 md:mt-0">
-				    <button
-				      className="w-full md:w-auto font-semibold text-white hover:bg-red-600 transition-all duration-300 border border-transparent bg-red-500 px-8 py-3 rounded-full shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-				      onClick={handleSearch}
-				    >
-				      Tìm chuyến xe
-				    </button>
-				  </div>
+					{/* Start Address */}
+					<div className="input-search flex flex-col w-full md:basis-1/4">
+						<label className="mb-2 font-medium text-gray-700">Điểm đi</label>
+						<div className="rounded-lg relative">
+							<div
+								className="w-full h-12 px-4 flex items-center border border-gray-300 rounded-lg hover:border-orange-400 transition-colors cursor-pointer"
+								onClick={() => setStartAddressSearchModalVisible(true)}
+							>
+								<span className={selectedStartAddress ? "" : "text-gray-400"}>
+									{selectedStartAddress || "Chọn điểm đi"}
+								</span>
+							</div>
+							{startAddressSearchModalVisible && (
+								<div className="absolute z-10 top-14 left-0 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fadeIn">
+									<div className="p-2 border-b">
+										<input
+											autoFocus
+											value={startAddressSearchQuery}
+											className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+											placeholder="Tìm kiếm điểm đi..."
+											onChange={(e) => setStartAddressSearchQuery(e.target.value)}
+										/>
+									</div>
+									<ul className="w-full overflow-y-auto max-h-60">
+										{(startAddressSearchQuery === "" ? availableProvinces : availableProvinces.filter((item) =>
+											item.toLowerCase().includes(startAddressSearchQuery.toLowerCase())
+										)).map((item, i) => (
+											<li
+												key={i}
+												className="px-4 py-2 hover:bg-orange-50 cursor-pointer transition-colors"
+												onClick={() => {
+													setSelectedStartAddress(item);
+													setStartAddressSearchModalVisible(false);
+													fetchDestinationsByOrigin(item); 
+												}}
+											>
+												{item}
+											</li>
+										))}
+									</ul>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* End Address */}
+					<div className="input-search flex flex-col w-full md:basis-1/4">
+						<label className="mb-2 font-medium text-gray-700">Điểm đến</label>
+						<div className="rounded-lg relative">
+							<div
+								className="w-full h-12 px-4 flex items-center border border-gray-300 rounded-lg hover:border-orange-400 transition-colors cursor-pointer"
+								onClick={() => setEndAddressSearchModalVisible(true)}
+							>
+								<span className={selectedEndAddress ? "" : "text-gray-400"}>
+									{selectedEndAddress || "Chọn điểm đến"}
+								</span>
+							</div>
+							{endAddressSearchModalVisible && (
+								<div className="absolute z-10 top-14 left-0 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fadeIn">
+									<div className="p-2 border-b">
+										<input
+											autoFocus
+											value={endAddressSearchQuery}
+											className="w-full h-10 px-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+											placeholder="Tìm kiếm điểm đến..."
+											onChange={(e) => setEndAddressSearchQuery(e.target.value)}
+										/>
+									</div>
+									<ul className="w-full overflow-y-auto max-h-60">
+										{(endAddressSearchQuery === "" ? availableDestinations : availableDestinations.filter((item) =>
+											item.toLowerCase().includes(endAddressSearchQuery.toLowerCase())
+										)).map((item, i) => (
+											<li
+												key={i}
+												className="px-4 py-2 hover:bg-orange-50 cursor-pointer transition-colors"
+												onClick={() => {
+													setSelectedEndAddress(item);
+													setEndAddressSearchModalVisible(false);
+													fetchOriginsByDestination(item); // Fetch origins based on the selected destination
+												}}
+											>
+												{item}
+											</li>
+										))}
+									</ul>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Date */}
+					<div className="input-search flex flex-col w-full md:basis-1/4">
+						<label className="mb-2 font-medium text-gray-700">Thời gian khởi hành</label>
+						<input
+							value={tripDate || new Date().toISOString().split('T')[0]}  
+							min={new Date().toISOString().split('T')[0]}  
+							className="w-full h-12 px-4 border border-gray-300 rounded-lg hover:border-orange-400 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition-colors"
+							type="date"
+							onChange={(e) => setTripDate(e.target.value)}
+						/>
+					</div>
+
+					{/* Button */}
+					<div className="w-full md:w-auto md:basis-1/4 mt-2 md:mt-0">
+						<button
+							className="w-full md:w-auto font-semibold text-white hover:bg-red-600 transition-all duration-300 border border-transparent bg-red-500 px-8 py-3 rounded-full shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+							onClick={handleTripSearch}
+						>
+							Tìm kiếm 
+						</button>
+					</div>
 				</div>
 			</div>
-
-			{/* {failureModal && (
-				<FailureNotification func={{ closeModal: closeFailureModal }} message={message} />
-			)} */}
+			{failureModalVisible && (
+				<FailureNotification func={{ closeModal: closeFailureModal }} message={errorMessage} />
+			)}
 		</>
 	);
 };
