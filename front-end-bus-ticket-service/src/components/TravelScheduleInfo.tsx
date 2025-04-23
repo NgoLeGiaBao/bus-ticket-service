@@ -6,7 +6,6 @@ import { getAvailableTrips } from '../services/apiServices';
 function TravelScheduleInfo() {
   const [searchParams] = useSearchParams();
   const [trips, setTrips] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getTrips();
@@ -17,9 +16,8 @@ function TravelScheduleInfo() {
     const endAddress = searchParams.get('end_address');
     const date = searchParams.get('date');
 
-    if (startAddress && endAddress && date) {
+    if (startAddress && endAddress && date && startAddress != "" && endAddress != "" && date != "") {
       try {
-        setLoading(true);
         const res = await getAvailableTrips(startAddress, endAddress, date);
         const mappedTrips = res.data.map((v: any) => {
           const tripDate = new Date(v.trip_date);
@@ -51,33 +49,24 @@ function TravelScheduleInfo() {
             duration: durationText,
             distance: `${v.routes.distance} km`,
             available_seats: v.available_seats,
-            vehicle_type: v.vehicle_type === 'standard' ? 'Tiêu chuẩn' : 'Cao cấp'
+            vehicle_type: v.vehicle_type === 'standard' ? 'Giường nằm' : 'Limousine'
           };
         });
         
         setTrips(mappedTrips);
       } catch (error) {
         console.error("Error fetching trips:", error);
-      } finally {
-        setLoading(false);
-      }
+      } 
     }
   };
 
-  if (loading) {
-    return (
-      <div className="lookupform mt-10 mb-32 mx-auto flex-1 max-w-screen-lg text-center py-10">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Đang tải kết quả tìm kiếm...</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="lookupform mt-10 mb-32 mx-auto flex-1 max-w-screen-lg">
       {searchParams.get('start_address') && (
         <>
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8 border border-orange-100">
+          <div className="p-6 mb-8 ">
             <h3 className="text-center text-2xl font-bold text-green-700 mb-2">
               KẾT QUẢ TÌM KIẾM: {searchParams.get('start_address')} → {searchParams.get('end_address')}
             </h3>
@@ -113,7 +102,7 @@ function TravelScheduleInfo() {
         <div className="overflow-hidden rounded-xl shadow-md border border-gray-200">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-orange-50 to-red-50">
-              <tr className="text-left">
+              <tr className="text-center">
                 <th className="px-6 py-4 font-semibold text-gray-700">Hành trình</th>
                 <th className="px-4 py-4 font-semibold text-gray-700">Thời gian</th>
                 <th className="px-4 py-4 font-semibold text-gray-700">Khoảng cách</th>
@@ -122,7 +111,7 @@ function TravelScheduleInfo() {
                 <th className="px-4 py-4 font-semibold text-gray-700 text-center">Đặt vé</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 text-center">
               {trips.map((v: any, i) => (
                 <tr key={i} className="hover:bg-orange-50 transition-colors">
                   <td className="px-6 py-5">

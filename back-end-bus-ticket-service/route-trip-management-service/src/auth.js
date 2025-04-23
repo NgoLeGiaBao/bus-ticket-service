@@ -19,7 +19,7 @@ function verifyToken(req, res, next) {
         }
 
         // Save the user information into the request object
-        req.user = decoded;  // Contains user information, including the role
+        req.user = decoded; 
         next();
     });
 }
