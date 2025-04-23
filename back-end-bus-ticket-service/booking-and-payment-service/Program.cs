@@ -59,9 +59,10 @@ builder.Services.AddHttpContextAccessor();
 
 // Register Redis
 var env = builder.Environment;
-var redisConnectionString = env.IsDevelopment()
-    ? "localhost:6379"
-    : builder.Configuration["Redis:Configuration"];
+
+// var redisConnectionString = "localhost:6379,abortConnect=false";
+var redisConnectionString = builder.Configuration["Redis:Configuration"] ?? "redis-server:6379,abortConnect=false";
+
 if (string.IsNullOrEmpty(redisConnectionString))
 {
     throw new InvalidOperationException("Redis connection string is missing or empty.");
