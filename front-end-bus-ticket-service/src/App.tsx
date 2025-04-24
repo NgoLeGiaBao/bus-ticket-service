@@ -17,6 +17,11 @@ import TravelSchedulePage from './pages/Customer/TravelSchedulePage';
 import ResultBookingPage from './components/ResultBookingPage';
 import DefaultLayout from './layout/DefaultLayout';
 import RouteManagement from './pages/Admin/RouteManagementPage';
+import TripManagement from './pages/Admin/TripManagementPage';
+import TicketExchange from './pages/Admin/TicketExchangePage';
+import BookingSupport from './pages/Admin/BookingSupportPage';
+import UserRoleManagement from './pages/Admin/UserRoleManagementPage';
+import UserManagement from './pages/Admin/UserManagementPage';
 
 // Public Layout
 const PublicLayout = () => (
@@ -124,10 +129,39 @@ function App() {
             <PageTitle title="Quản lý tuyến đường"/>
             <RouteManagement />
           </>
-        }
-        />
+        }/>
+        <Route path='/admin/operation/trip-management' element ={
+          <>
+            <PageTitle title="Quản lý chuyến đi"/>
+            <TripManagement />
+          </>
+        }/>
+        <Route path='/admin/reservation/change-ticket' element ={
+          <>
+            <PageTitle title="Hỗ trợ đổi vé"/>
+            <TicketExchange />
+          </>
+        }/>
+        <Route path='/admin/reservation/booking-support' element ={
+          <>
+            <PageTitle title="Hỗ trợ đổi vé"/>
+            <BookingSupport />
+          </>
+        }/>
+        <Route path='/admin/user/assgin-role' element ={
+          <>
+            <PageTitle title="Quản lý vai trò"/>
+            <UserRoleManagement />
+          </>
+        }/>
+        <Route path='/admin/user/manage-role' element ={
+          <>
+            <PageTitle title="Quản lý người dùng"/>
+            <UserManagement />
+          </>
+        }/>
       </Route>
-
+      
       {/* 404 */}
       <Route
         path="*"
