@@ -15,9 +15,10 @@ import ForgotPasswordPage from './pages/Customer/ForgotPasswordPage';
 import ProfileManagementForm from './components/ProfileManagementForm';
 import TravelSchedulePage from './pages/Customer/TravelSchedulePage';
 import ResultBookingPage from './components/ResultBookingPage';
-// import AdminDashboard from './pages/Admin/Dashboard';
+import DefaultLayout from './layout/DefaultLayout';
+import RouteManagement from './pages/Admin/RouteManagementPage';
 
-// Public Layout: Navbar + Footer
+// Public Layout
 const PublicLayout = () => (
   <>
     <Navbar />
@@ -26,15 +27,16 @@ const PublicLayout = () => (
   </>
 );
 
-// Admin Layout: có thể là Sidebar, Header riêng hoặc chỉ đơn giản là không có gì
+
+// Admin Layout
 const AdminLayout = () => (
   <>
-    {/* <AdminNavbar /> hoặc <Sidebar /> tùy bạn */}
-    <Outlet />
+    <DefaultLayout/>
   </>
 );
 
 function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const { pathname } = useLocation();
 
@@ -110,9 +112,21 @@ function App() {
       </Route>
 
       {/* Admin layout routes */}
-      {/* <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-      </Route> */}
+      <Route path="/admin" element={<AdminLayout/>}>
+        <Route index element={
+            <>
+              <PageTitle title="BHP Bus Line"/>
+              <HomePage />
+            </>
+          } />
+        <Route path='/admin/operation/route-management' element ={
+          <>
+            <PageTitle title="Quản lý tuyến đường"/>
+            <RouteManagement />
+          </>
+        }
+        />
+      </Route>
 
       {/* 404 */}
       <Route
