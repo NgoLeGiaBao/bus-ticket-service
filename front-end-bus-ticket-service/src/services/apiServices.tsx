@@ -1,5 +1,6 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams } from "../interfaces/Auth";
+import { BookingRequest, BookingResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
 
@@ -39,7 +40,7 @@ export const postLogout = async (): Promise<any> => {
   };
 
 
-// Route and Trip APIs
+//-- Journey APIs --//
 // Get All Provinces (API to fetch provinces data)
 export const getAllDestinations = async (): Promise<any> => {
   try {
@@ -83,5 +84,18 @@ export const getTripById = async (tripId: string): Promise<any> => {
     return response;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || "Failed to fetch trip details");
+  }
+};
+
+//-- Reservation APIs --//
+// Create a new booking
+export const createBooking = async (
+  payload: BookingRequest
+): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<BookingResponse>>(`/reservations/bookings`, payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create booking');
   }
 };

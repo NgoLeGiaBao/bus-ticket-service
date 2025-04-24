@@ -1,11 +1,11 @@
 
-import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getTripById } from '../services/apiServices';
+import { useSearchParams } from 'react-router-dom';
+import { createBooking, getTripById } from '../services/apiServices';
 import { useSelector } from 'react-redux';
 import FailureNotification from './FailureNotification';
 import SeatItem from './SeatItem';
+import { BookingRequest } from '../interfaces/Reservation';
 
 const BookingTicketForm = () => {
   const [searchParams] = useSearchParams();
@@ -58,8 +58,6 @@ const BookingTicketForm = () => {
       setRoute(res.data.routes.origin + ' - ' + res.data.routes.destination);
       setVehicleType(res.data.vehicle_type);
       setBookedSeats(res.data.booked_seats || []);
-	  console.log('booked_seats', res.data.booked_seats);
-	  console.log('vehicle_type', res.data.vehicle_type);
     } catch (error) {
       console.error('Error fetching trip:', error);
     }
@@ -122,29 +120,23 @@ const BookingTicketForm = () => {
       return;
     }
 
-    // const body = {
-    //   trip_id: tripID,
-    //   customer_id: user?.id || '',
-    //   seat: selectedSeats.join(','),
-    //   price: price,
-    //   quantity: selectedSeats.length,
-    //   amount: price * selectedSeats.length,
-    //   language: 'vn',
-    // };
 
-    // try {
-    //   const token = sessionStorage.getItem('token');
-    //   const res = await axios.post(API_URL + `customer/payment`, body, {
-    //     headers: { Authorization: `Bearer ${token}` }
-    //   });
-      
-    //   if (res.status === 200) {
-    //     window.location.href = res.data;
-    //   }
-    // } catch (err) {
-    //   setMessage(err.response?.data?.message || 'Có lỗi xảy ra khi thanh toán');
-    //   openFailureModal();
-    // }
+    const bookingPayload : BookingRequest = {
+      phoneNumber: phone_number,
+      email: email,
+      customerName: fullname,
+      tripId: tripID?.toString() || '',
+      seatNumbers: selectedSeats,
+      amount: price * selectedSeats.length,
+    };
+
+    const res = await createBooking(bookingPayload);
+    if (res.success) {
+      window.location.href = res.data.paymentUrl;
+    } else {
+      setMessage(res.message || 'Vé đã được bán');
+      openFailureModal();
+    }
   };
 
   // Generate seat layout based on vehicle type

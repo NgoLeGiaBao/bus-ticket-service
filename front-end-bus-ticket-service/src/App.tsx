@@ -14,6 +14,7 @@ import BookingTicketPage from './pages/Customer/BookingTicketPage';
 import ForgotPasswordPage from './pages/Customer/ForgotPasswordPage';
 import ProfileManagementForm from './components/ProfileManagementForm';
 import TravelSchedulePage from './pages/Customer/TravelSchedulePage';
+import ResultBookingPage from './components/ResultBookingPage';
 // import AdminDashboard from './pages/Admin/Dashboard';
 
 // Public Layout: Navbar + Footer
@@ -86,6 +87,12 @@ function App() {
           <>
             <PageTitle title="Đặt vé"/>
             <BookingTicketPage />
+          </>
+        }/>
+        <Route path ='/booking-result' element={
+          <>
+            <PageTitle title="Kết quả đặt vé"/>
+            <ResultBookingPage />
           </>
         }/>
         <Route path ='/account' element={

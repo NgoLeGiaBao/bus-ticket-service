@@ -148,45 +148,56 @@ const deleteTripService = async (id) => {
 
 // Add booked seats to a trip
 const addBookedSeats = async (tripId, newSeats) => {
-  // Fetch current booked seats
-  const { data: trip, error: getError } = await supabase
-    .from('trips')
-    .select('booked_seats')
-    .eq('id', tripId)
-    .single();
-
-  if (getError) throw new Error(getError.message);
-
-  const updatedSeats = [...trip.booked_seats, ...newSeats];
-
-  // Update booked_seats column
-  const { data, error } = await supabase
-    .from('trips')
-    .update({ booked_seats: updatedSeats })
-    .eq('id', tripId);
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-// Remove booked seats from a trip
-const removeBookedSeats = async (tripId, seatsToRemove) => {
-    // Fetch current booked seats
+    // Fetch current booked seats and available seats
     const { data: trip, error: getError } = await supabase
       .from('trips')
-      .select('booked_seats')
+      .select('booked_seats, available_seats')
       .eq('id', tripId)
       .single();
   
     if (getError) throw new Error(getError.message);
   
-    // Remove specified seats
-    const updatedSeats = trip.booked_seats.filter(seat => !seatsToRemove.includes(seat));
+    const updatedBookedSeats = [...trip.booked_seats, ...newSeats];
+    const updatedAvailableSeats = trip.available_seats - newSeats.length;
   
-    // Update booked_seats column
+    if (updatedAvailableSeats < 0) {
+      throw new Error("Not enough available seats");
+    }
+  
+    // Update both columns
     const { data, error } = await supabase
       .from('trips')
-      .update({ booked_seats: updatedSeats })
+      .update({
+        booked_seats: updatedBookedSeats,
+        available_seats: updatedAvailableSeats,
+      })
+      .eq('id', tripId);
+  
+    if (error) throw new Error(error.message);
+    return data;
+};
+
+// Remove booked seats from a trip
+const removeBookedSeats = async (tripId, seatsToRemove) => {
+    // Fetch current booked seats and available seats
+    const { data: trip, error: getError } = await supabase
+      .from('trips')
+      .select('booked_seats, available_seats')
+      .eq('id', tripId)
+      .single();
+  
+    if (getError) throw new Error(getError.message);
+  
+    const updatedBookedSeats = trip.booked_seats.filter(seat => !seatsToRemove.includes(seat));
+    const updatedAvailableSeats = trip.available_seats + seatsToRemove.length;
+  
+    // Update both columns
+    const { data, error } = await supabase
+      .from('trips')
+      .update({
+        booked_seats: updatedBookedSeats,
+        available_seats: updatedAvailableSeats,
+      })
       .eq('id', tripId);
   
     if (error) throw new Error(error.message);

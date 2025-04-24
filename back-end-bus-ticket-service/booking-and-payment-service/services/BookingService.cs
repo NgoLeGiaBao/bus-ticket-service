@@ -172,10 +172,10 @@ namespace booking_and_payment_service.services
         {
             VnPay vnpay = new VnPay();
             string vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-            string vnpApi = "http://localhost:9503/api/payment/ipn";
+            string vnpApi = "http://localhost:9503/payment/ipn";
             string vnpTmnCode = "XY9GJBC5";
             string vnpHashSecret = "B5V47OE9SWWMCH4MORJTVRZK4GRKEN2Y";
-            string vnpReturnUrl = "http://localhost:9503/api/payment/return";
+            string vnpReturnUrl = "http://localhost:9503/payment/return";
             
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
