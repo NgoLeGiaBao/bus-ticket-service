@@ -24,7 +24,7 @@ namespace booking_and_payment_service.controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ApiResponse<BookingResponseDto>( false, "Invalid input data", null, string.Join("; ", ModelState.Values     .SelectMany(x => x.Errors)     .Select(x => x.ErrorMessage))));
+                return BadRequest(new ApiResponse<BookingResponseDto>(false, "Invalid input data", null, string.Join("; ", ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage))));
             }
 
             var result = await _bookingService.CreateBookingAsync(dto, "customer");
@@ -41,7 +41,7 @@ namespace booking_and_payment_service.controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new ApiResponse<BookingResponseDto>( false, "Invalid input data", null, string.Join("; ", ModelState.Values     .SelectMany(x => x.Errors)     .Select(x => x.ErrorMessage))));
+                return BadRequest(new ApiResponse<BookingResponseDto>(false, "Invalid input data", null, string.Join("; ", ModelState.Values.SelectMany(x => x.Errors).Select(x => x.ErrorMessage))));
             }
 
             var result = await _bookingService.CreateBookingAsync(dto, "employee");
@@ -50,7 +50,7 @@ namespace booking_and_payment_service.controllers
                 return BadRequest(result);
 
             return Ok(result);
-                
+
         }
 
         [Authorize(Roles = "Admin, Manager, Employee")]
@@ -85,6 +85,13 @@ namespace booking_and_payment_service.controllers
             {
                 return BadRequest(result);
             }
+            return Ok(result);
+        }
+        
+        [HttpGet("lookup")]
+        public async Task<IActionResult> LookupTicket([FromQuery] string phoneNumber, [FromQuery] string bookingId)
+        {
+            var result = await _bookingService.LookupTicketAsync(phoneNumber, bookingId);
             return Ok(result);
         }
 

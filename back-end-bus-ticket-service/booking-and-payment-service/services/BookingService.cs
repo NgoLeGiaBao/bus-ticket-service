@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 using booking_and_payment_service.models;
 using booking_and_payment_service.responses;
@@ -16,13 +17,15 @@ namespace booking_and_payment_service.services
         private readonly UserDbContext _context;
         private readonly RedisService _redisService;
         private readonly IMessagePublisher _messagePublisher;
+        private readonly HttpClient _httpClient;
 
 
-        public BookingService(UserDbContext context, RedisService redisService, IMessagePublisher messagePublisher)
+        public BookingService(UserDbContext context, RedisService redisService, IMessagePublisher messagePublisher, HttpClient httpClient)
         {
             _context = context;
             _redisService = redisService;
             _messagePublisher = messagePublisher;
+            _httpClient = httpClient;
         }
 
         // Create booking
@@ -51,7 +54,7 @@ namespace booking_and_payment_service.services
                     .ToListAsync();
 
                 var bookedSeats = existingBookings
-                    .Where(b => b.Status != "Cancelled") 
+                    .Where(b => b.Status != "Cancelled")
                     .SelectMany(b => b.SeatNumbers)
                     .ToHashSet();
 
@@ -118,11 +121,11 @@ namespace booking_and_payment_service.services
 
                 // Publish to RabbitMQ
                 _messagePublisher.Publish("booking.route.created", JsonConvert.SerializeObject(booking));
-                
+
                 // Get Payment URL
                 string paymentUrl = GetPaymentUrlByBookingId(booking.Id, dto.Amount);
                 bookingResponse.PaymentUrl = paymentUrl;
-                return new ApiResponse<BookingResponseDto>( true, "Booking created successfully.", bookingResponse, null);
+                return new ApiResponse<BookingResponseDto>(true, "Booking created successfully.", bookingResponse, null);
             }
             catch (Exception ex)
             {
@@ -176,21 +179,21 @@ namespace booking_and_payment_service.services
             string vnpTmnCode = "XY9GJBC5";
             string vnpHashSecret = "B5V47OE9SWWMCH4MORJTVRZK4GRKEN2Y";
             string vnpReturnUrl = "http://localhost:9503/payment/return";
-            
+
             vnpay.AddRequestData("vnp_Version", "2.1.0");
             vnpay.AddRequestData("vnp_Command", "pay");
             vnpay.AddRequestData("vnp_TmnCode", vnpTmnCode);
             vnpay.AddRequestData("vnp_BankCode", "NCB");
-            vnpay.AddRequestData("vnp_Amount", (amount * 100).ToString()); 
+            vnpay.AddRequestData("vnp_Amount", (amount * 100).ToString());
             vnpay.AddRequestData("vnp_CreateDate", DateTime.UtcNow.AddHours(7).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_CurrCode", "VND");
             vnpay.AddRequestData("vnp_Locale", "vn");
             vnpay.AddRequestData("vnp_OrderInfo", "Payment for booking:" + bookingId);
-            vnpay.AddRequestData("vnp_OrderType", "other"); 
+            vnpay.AddRequestData("vnp_OrderType", "other");
             vnpay.AddRequestData("vnp_ExpireDate", DateTime.UtcNow.AddHours(7).AddMinutes(15).ToString("yyyyMMddHHmmss"));
             vnpay.AddRequestData("vnp_ReturnUrl", vnpReturnUrl);
             vnpay.AddRequestData("vnp_IpAddr", "127.0.0.1");
-            vnpay.AddRequestData("vnp_TxnRef", bookingId); 
+            vnpay.AddRequestData("vnp_TxnRef", bookingId);
 
             string paymentUrl = vnpay.CreateRequestUrl(vnpUrl, vnpHashSecret);
 
@@ -202,7 +205,7 @@ namespace booking_and_payment_service.services
         public async Task<ApiResponse<List<Booking>>> GetBookingsByPhoneAsync(string phoneNumber)
         {
             var bookings = await _context.Bookings
-                .Where(b => b.PhoneNumber == phoneNumber && 
+                .Where(b => b.PhoneNumber == phoneNumber &&
                            (b.Status == "Booked" || b.Status == "Late"))
                 .ToListAsync();
 
@@ -256,13 +259,13 @@ namespace booking_and_payment_service.services
 
                 //  Get the records of the conditions that can be translated into SQL
                 var matchingBookings = await _context.Bookings
-                    .Where(b => b.Id == dto.BookingId 
-                             && b.TripId == dto.OldTripId 
+                    .Where(b => b.Id == dto.BookingId
+                             && b.TripId == dto.OldTripId
                              && b.Status == "Booked")
                     .ToListAsync();
 
                 // Bước 2: Compare correct seats using SequenceEqual
-                var booking = matchingBookings.FirstOrDefault(b => 
+                var booking = matchingBookings.FirstOrDefault(b =>
                     b.SeatNumbers.OrderBy(s => s).SequenceEqual(dto.OldSeatNumbers.OrderBy(s => s))
                 );
 
@@ -330,10 +333,58 @@ namespace booking_and_payment_service.services
             }
         }
 
+        public async Task<ApiResponse<TicketInfo>> LookupTicketAsync(string phoneNumber, string bookingId)
+        {
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.PhoneNumber == phoneNumber);
 
+            if (booking == null)
+                return new ApiResponse<TicketInfo>(false, "Không tìm thấy vé với mã và số điện thoại cung cấp.", null, "NotFound");
 
+            var payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.BookingId == bookingId);
 
+            TripLookupDto? tripDto = null;
 
+            try
+            {
+                var tripResponse = await _httpClient.GetFromJsonAsync<ApiResponse<JsonElement>>(
+                    $"journeys/trips/{booking.TripId}");
 
+                if (tripResponse?.Success != true)
+                {
+                    // Log hoặc throw exception nếu cần
+                    throw new Exception("Could not retrieve trip information.");
+                }
+
+                var data = tripResponse.Data;
+                Console.WriteLine(data.ToString());
+                tripDto = new TripLookupDto
+                {
+                    TripDate = data.GetProperty("trip_date").GetDateTime(),
+                    Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
+                    Destination = data.GetProperty("routes").GetProperty("destination").GetString()!
+                };
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi chi tiết
+                Console.WriteLine($"Error retrieving trip information: {ex.Message}");
+            }
+
+            if (tripDto == null)
+            {
+                return new ApiResponse<TicketInfo>(false, "No trip information found.", null, "NotFound");
+            }
+
+            TicketInfo ticketInfo = new TicketInfo
+            {
+                booking = booking,
+                payment = payment,
+                trip = tripDto
+            };
+
+            return new ApiResponse<TicketInfo>(true, "Tra cứu vé thành công", ticketInfo, null);
+        }
     }
 }

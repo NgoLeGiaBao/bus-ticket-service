@@ -142,6 +142,21 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Configure trip service
+builder.Services.AddHttpClient("TripService", client =>
+{
+    // client.BaseAddress = new Uri("http://localhost:8000/api/v1/"); 
+    client.BaseAddress = new Uri("http://kong:8000/api/v1/"); 
+    
+
+});
+
+builder.Services.AddScoped(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    return factory.CreateClient("TripService");
+});
+
 var app = builder.Build();
 
 // Middleware

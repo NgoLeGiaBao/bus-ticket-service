@@ -1,6 +1,6 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams } from "../interfaces/Auth";
-import { BookingRequest, BookingResponse } from "../interfaces/Reservation";
+import { BookingRequest, BookingResponse, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
 
@@ -97,5 +97,20 @@ export const createBooking = async (
     return response;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || 'Failed to create booking');
+  }
+};
+
+// Get booking by ID
+export const lookupTicket = async (phoneNumber: string, bookingId: string): Promise<any> => {
+  try {
+      const response = await axios.get<ApiResponse<LookUpResponse>>(`/reservations/bookings/lookup`, {
+          params: {
+              phoneNumber,
+              bookingId
+          }
+      });
+      return response;
+  } catch (error) {
+      throw new Error('An error occurred while fetching the booking details.');
   }
 };

@@ -58,7 +58,6 @@ function App() {
             <HomePage />
           </>
         } />
-        {/* Thêm các trang public khác như About, Contact tại đây */}
         <Route path='/login' element={
            <>
             <PageTitle title="Đăng nhập "/>
