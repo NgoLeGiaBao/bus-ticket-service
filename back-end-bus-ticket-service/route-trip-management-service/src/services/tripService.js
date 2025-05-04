@@ -1,13 +1,14 @@
 const supabase = require('../supabase');
 
 // Create a new trip
-const createTripService = async (tripDate, availableSeats, routeId, price) => {
+const createTripService = async (tripDate, availableSeats, routeId, price, vehicle_type) => {
     const { data, error } = await supabase.from('trips').insert([
         {
             trip_date: tripDate,
             available_seats: availableSeats,
             route_id: routeId,
-            price: price
+            price: price,
+            vehicle_type: vehicle_type
         }
     ]);
 

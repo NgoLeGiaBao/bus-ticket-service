@@ -3,8 +3,8 @@ const tripService = require('../services/tripService');
 // Create a new trip
 exports.createTripController = async (req, res) => {
     try {
-        const { tripDate, availableSeats, routeId, price } = req.body;
-        const trip = await tripService.createTripService(tripDate, availableSeats, routeId, price);
+        const { tripDate, availableSeats, routeId, price, vehicle_type } = req.body;
+        const trip = await tripService.createTripService(tripDate, availableSeats, routeId, price, vehicle_type);
         res.status(201).json({ success: true, data: trip });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });

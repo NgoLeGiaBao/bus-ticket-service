@@ -77,6 +77,16 @@ export const getAvailableTrips = async (from: string, to: string, tripDate: stri
   }
 };
 
+// Get all trips
+export const getAllTrips = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<AvailableTripResponse>>(`/journeys/trips`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch trips");
+  }
+};
+
 // Get trip by ID
 export const getTripById = async (tripId: string): Promise<any> => {
   try {
@@ -86,6 +96,7 @@ export const getTripById = async (tripId: string): Promise<any> => {
     throw new Error(error?.response?.data?.message || "Failed to fetch trip details");
   }
 };
+
 
 // Get all routes
 export const getAllRoutes = async (): Promise<any> => {
@@ -134,6 +145,16 @@ export const toggleRouteStatus = async (id: string, is_active: boolean): Promise
     return response;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || 'Không thể cập nhật trạng thái tuyến');
+  }
+};
+
+// Update trip status
+export const updateTripStatus = async (id: string, status: string): Promise<any> => {
+  try {
+    const response = await axios.put(`/journeys/trips/${id}/status`, { status });
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Không thể cập nhật trạng thái chuyến xe');
   }
 };
 
