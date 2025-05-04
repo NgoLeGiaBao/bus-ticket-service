@@ -52,3 +52,11 @@ export interface LookUpResponse {
     };
     error: string | null;
 }
+
+export interface ChangeSeatRequest{
+  bookingId: string;
+  oldTripId: string;
+  oldSeatNumbers: string[];
+  newTripId: string;
+  newSeatNumbers: string[];
+}

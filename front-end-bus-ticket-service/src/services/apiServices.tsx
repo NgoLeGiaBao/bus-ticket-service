@@ -1,6 +1,6 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams } from "../interfaces/Auth";
-import { BookingRequest, BookingResponse, LookUpResponse } from "../interfaces/Reservation";
+import { BookingRequest, BookingResponse, ChangeSeatRequest, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
 
@@ -97,6 +97,15 @@ export const getTripById = async (tripId: string): Promise<any> => {
   }
 };
 
+// Get trip(s) by Route ID
+export const getTripByRouteId = async(routeId: string): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<Array<AvailableTripResponse>>>(`/journeys/trips/route/${routeId}`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch trip details");
+  }
+}
 
 // Get all routes
 export const getAllRoutes = async (): Promise<any> => {
@@ -185,5 +194,30 @@ export const lookupTicket = async (phoneNumber: string, bookingId: string): Prom
       return response;
   } catch (error) {
       throw new Error('An error occurred while fetching the booking details.');
+  }
+};
+
+// Get booking by Number phone
+export const lookupTicketByPhone = async (phoneNumber: string): Promise<any> => {
+  try {
+      const response = await axios.get<ApiResponse<LookUpResponse>>(`/reservations/bookings/lookup-phone`, {
+          params: {
+              phoneNumber
+          }
+      });
+      return response;
+  } catch (error) {
+      throw new Error('An error occurred while fetching the booking details.');
+  }
+}
+
+// Change seat
+export const changeSeatRequestFromCustomer = async (data: ChangeSeatRequest) => {
+  try {
+    const response = await axios.post('/reservations/bookings/change-seat', data);
+    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error('Change seat request failed:', error);
+    return { success: false, error: error.response?.data || error.message };
   }
 };

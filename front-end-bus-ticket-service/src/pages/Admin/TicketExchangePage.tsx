@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { changeSeatRequestFromCustomer, getTripByRouteId, lookupTicketByPhone } from '../../services/apiServices';
+import { ChangeSeatRequest } from '../../interfaces/Reservation';
 
 interface Ticket {
   id: string;
@@ -8,16 +10,57 @@ interface Ticket {
   origin: string;
   destination: string;
   departureTime: string;
-  seatNumbers: string[]; // Thay đổi từ seatNumber sang seatNumbers (mảng)
+  seatNumbers: string[];
+  route_id: string;
+  trip_id: string;
   status: 'confirmed' | 'used' | 'cancelled';
+  paymentStatus: 'pending' | 'success' | 'failed';
 }
 
 interface Trip {
   id: string;
-  route: string;
-  departureTime: string;
-  availableSeats: string[];
+  trip_date: string;
+  available_seats: number;
+  route_id: string;
+  booked_seats: string[];
+  vehicle_type: string;
+  price: number;
+  status: string;
+  routes: {
+    id: string;
+    price: number;
+    origin: string;
+    distance: number;
+    duration: number;
+    is_active: boolean;
+    destination: string;
+  };
 }
+
+// Helper function to generate all possible seats for a vehicle type
+const generateAllSeats = (vehicleType: string): string[] => {
+  // This is a simplified version - adjust based on your actual seat maps
+  if (vehicleType === 'limousine') {
+    const rows = ['A', 'B'];
+    const seats = [];
+    for (const row of rows) {
+      for (let i = 1; i <= 17; i++) {
+        seats.push(`${row}${i.toString().padStart(2, '0')}`);
+      }
+    }
+    return seats;
+  } else {
+    const rows = ['A', 'B'];
+    const seats = [];
+    for (const row of rows) {
+      for (let i = 1; i <= 18; i++) {
+        seats.push(`${row}${i.toString().padStart(2, '0')}`);
+      }
+    }
+    return seats;
+  }
+ 
+};
 
 const TicketExchange: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -29,65 +72,45 @@ const TicketExchange: React.FC = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [exchangeSuccess, setExchangeSuccess] = useState(false);
 
-  // Mock data với trường hợp 1 booking có nhiều vé
-  const mockTickets: Ticket[] = [
-    {
-      id: '1',
-      bookingCode: 'ABC123',
-      passengerName: 'Nguyễn Văn A',
-      phoneNumber: '0912345678',
-      origin: 'Hồ Chí Minh',
-      destination: 'Hà Nội',
-      departureTime: '2023-06-15T08:00:00',
-      seatNumbers: ['A12', 'A13'], 
-      status: 'confirmed',
-    },
-    {
-      id: '2',
-      bookingCode: 'DEF456',
-      passengerName: 'Nguyễn Văn B',
-      phoneNumber: '0912345678',
-      origin: 'Hồ Chí Minh',
-      destination: 'Hà Nội',
-      departureTime: '2023-06-15T08:00:00',
-      seatNumbers: ['B05'],
-      status: 'confirmed',
-    },
-  ];
-
-  const mockTrips: Trip[] = [
-    {
-      id: 't1',
-      route: 'Hồ Chí Minh → Hà Nội',
-      departureTime: '2023-06-16T08:00:00',
-      availableSeats: ['A01', 'A02', 'A05', 'B02', 'B12', 'C04', 'C05'],
-    },
-    {
-      id: 't2',
-      route: 'Hồ Chí Minh → Hà Nội',
-      departureTime: '2023-06-16T14:00:00',
-      availableSeats: ['A03', 'A04', 'A07', 'B01', 'B08', 'C12'],
-    },
-  ];
-
-  const handleSearch = () => {
-    const foundTickets = mockTickets.filter(
-      (ticket) => ticket.phoneNumber === phoneNumber && ticket.status === 'confirmed'
-    );
-    setCustomerTickets(foundTickets);
+  const handleSearch = async () => {
+    const res = await lookupTicketByPhone(phoneNumber);
+    if (res.success) {
+      const mappedTickets: Ticket[] = res.data.map((item) => ({
+        id: item.booking.id,
+        bookingCode: item.booking.id,
+        passengerName: item.booking.customerName,
+        phoneNumber: item.booking.phoneNumber,
+        origin: item.trip.origin,
+        destination: item.trip.destination,
+        departureTime: item.trip.tripDate,
+        seatNumbers: item.booking.seatNumbers,
+        route_id: item.trip.routeId,
+        trip_id: item.booking.tripId,
+        status: item.booking.status === 'Booked' ? 'confirmed' : 
+                item.booking.status === 'Cancelled' ? 'cancelled' : 'used',
+        paymentStatus: item.payment.status.toLowerCase() as 'pending' | 'success' | 'failed'
+      }));
+      
+      setCustomerTickets(mappedTickets);
+    }
     setSelectedTicket(null);
     setSelectedTrip(null);
     setSelectedSeats([]);
   };
 
-  const handleSelectTicket = (ticket: Ticket) => {
+  const handleSelectTicket = async (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setSelectedSeats([]);
-    // Tìm các chuyến phù hợp
-    const tripsForExchange = mockTrips.filter(
-      (trip) => trip.route === `${ticket.origin} → ${ticket.destination}`
-    );
-    setAvailableTrips(tripsForExchange);
+
+    const res = await getTripByRouteId(ticket.route_id);
+    if (res.success && res.data) {
+      const tripsForExchange = res.data.filter(
+        (trip) =>
+          trip.status === 'scheduled'
+      )
+      setAvailableTrips(tripsForExchange);
+    }
+    
   };
 
   const handleSelectTrip = (trip: Trip) => {
@@ -100,7 +123,6 @@ const TicketExchange: React.FC = () => {
       if (prev.includes(seat)) {
         return prev.filter(s => s !== seat);
       } else {
-        // Kiểm tra số lượng ghế không vượt quá số vé cần đổi
         if (prev.length < (selectedTicket?.seatNumbers.length || 0)) {
           return [...prev, seat];
         }
@@ -109,18 +131,30 @@ const TicketExchange: React.FC = () => {
     });
   };
 
-  const handleExchange = () => {
-    // Mock API call
-    setTimeout(() => {
-      setExchangeSuccess(true);
-      setShowConfirmModal(false);
-      // Refresh data
-      setCustomerTickets(customerTickets.filter(t => t.id !== selectedTicket?.id));
-      setSelectedTicket(null);
-      setAvailableTrips([]);
-      setSelectedTrip(null);
-      setSelectedSeats([]);
-    }, 1500);
+  const handleExchange = async () => {
+    if (!selectedTicket || !selectedTrip || selectedSeats.length === 0) return;
+    const dataExchange : ChangeSeatRequest = {
+      bookingId: selectedTicket.id,
+      oldTripId: selectedTicket.trip_id,
+      oldSeatNumbers: selectedTicket.seatNumbers,
+      newTripId: selectedTrip.id,
+      newSeatNumbers: selectedSeats
+    }
+    const res = await changeSeatRequestFromCustomer(dataExchange);
+    if (res.success) {
+      setTimeout(() => {
+        setExchangeSuccess(true);
+        setShowConfirmModal(false);
+        // Refresh data
+        setCustomerTickets([]);
+        setSelectedTicket(null);
+        setAvailableTrips([]);
+        setSelectedTrip(null);
+        setSelectedSeats([]);
+      }, 1500);
+    } else {
+      alert("Change ticket failure");
+    } 
   };
 
   const formatDateTime = (dateTime: string) => {
@@ -129,6 +163,12 @@ const TicketExchange: React.FC = () => {
       date: date.toLocaleDateString('vi-VN'),
       time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
     };
+  };
+
+  // Function to get available seats for display
+  const getAvailableSeatsForDisplay = (trip: Trip): string[] => {
+    const allSeats = generateAllSeats(trip.vehicle_type);
+    return allSeats.filter(seat => !trip.booked_seats.includes(seat));
   };
 
   return (
@@ -221,7 +261,9 @@ const TicketExchange: React.FC = () => {
           </div>
           <div className="divide-y divide-gray-200">
             {availableTrips.map((trip) => {
-              const time = formatDateTime(trip.departureTime);
+              const time = formatDateTime(trip.trip_date);
+              const availableSeats = getAvailableSeatsForDisplay(trip);
+              
               return (
                 <div
                   key={trip.id}
@@ -232,14 +274,17 @@ const TicketExchange: React.FC = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium">{trip.route}</h3>
+                      <h3 className="font-medium">{trip.routes.origin} → {trip.routes.destination}</h3>
                       <p className="text-sm text-gray-600">
                         {time.date} - {time.time}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Loại xe: {trip.vehicle_type} | Giá: {trip.price.toLocaleString('vi-VN')}đ
                       </p>
                     </div>
                     <div>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {trip.availableSeats.length} ghế trống
+                        {availableSeats.length} ghế trống
                       </span>
                     </div>
                   </div>
@@ -251,7 +296,7 @@ const TicketExchange: React.FC = () => {
                         Chọn {selectedTicket.seatNumbers.length} ghế mới (hiện tại: {selectedTicket.seatNumbers.join(', ')})
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {trip.availableSeats.map((seat) => (
+                        {availableSeats.map((seat) => (
                           <button
                             key={seat}
                             type="button"
@@ -339,9 +384,11 @@ const TicketExchange: React.FC = () => {
               <div className="border-b pb-4">
                 <h3 className="font-medium">Thông tin vé mới</h3>
                 <div className="mt-2 text-sm text-gray-600 space-y-1">
-                  <p>Tuyến: {selectedTrip.route}</p>
-                  <p>Ngày giờ: {formatDateTime(selectedTrip.departureTime).date} -{' '}
-                    {formatDateTime(selectedTrip.departureTime).time}</p>
+                  <p>Tuyến: {selectedTrip.routes.origin} → {selectedTrip.routes.destination}</p>
+                  <p>Ngày giờ: {formatDateTime(selectedTrip.trip_date).date} -{' '}
+                    {formatDateTime(selectedTrip.trip_date).time}</p>
+                  <p>Loại xe: {selectedTrip.vehicle_type}</p>
+                  <p>Giá vé: {selectedTrip.price.toLocaleString('vi-VN')}đ</p>
                   <p>Ghế mới: {selectedSeats.join(', ')}</p>
                 </div>
               </div>

@@ -363,7 +363,8 @@ namespace booking_and_payment_service.services
                 {
                     TripDate = data.GetProperty("trip_date").GetDateTime(),
                     Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
-                    Destination = data.GetProperty("routes").GetProperty("destination").GetString()!
+                    Destination = data.GetProperty("routes").GetProperty("destination").GetString()!,
+                    RouteId = data.GetProperty("routes").GetProperty("id").GetString()!
                 };
             }
             catch (Exception ex)
@@ -418,7 +419,8 @@ namespace booking_and_payment_service.services
                         {
                             TripDate = data.GetProperty("trip_date").GetDateTime(),
                             Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
-                            Destination = data.GetProperty("routes").GetProperty("destination").GetString()!
+                            Destination = data.GetProperty("routes").GetProperty("destination").GetString()!,
+                            RouteId = data.GetProperty("routes").GetProperty("id").GetString()!
                         };
                     }
                 }
