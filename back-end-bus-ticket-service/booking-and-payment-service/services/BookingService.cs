@@ -386,5 +386,64 @@ namespace booking_and_payment_service.services
 
             return new ApiResponse<TicketInfo>(true, "Tra cứu vé thành công", ticketInfo, null);
         }
+
+        public async Task<ApiResponse<List<TicketInfo>>> LookupTicketsByPhoneAsync(string phoneNumber)
+        {
+            var bookings = await _context.Bookings
+                .Where(b => b.PhoneNumber == phoneNumber)
+                .ToListAsync();
+        
+            if (bookings == null || !bookings.Any())
+                return new ApiResponse<List<TicketInfo>>(false, "Không tìm thấy vé với số điện thoại cung cấp.", null, "NotFound");
+        
+            var tickets = new List<TicketInfo>();
+        
+            foreach (var booking in bookings)
+            {
+                var payment = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.BookingId == booking.Id);
+        
+                TripLookupDto? tripDto = null;
+        
+                try
+                {
+                    var tripResponse = await _httpClient.GetFromJsonAsync<ApiResponse<JsonElement>>(
+                        $"journeys/trips/{booking.TripId}");
+        
+                    if (tripResponse?.Success == true)
+                    {
+                        var data = tripResponse.Data;
+        
+                        tripDto = new TripLookupDto
+                        {
+                            TripDate = data.GetProperty("trip_date").GetDateTime(),
+                            Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
+                            Destination = data.GetProperty("routes").GetProperty("destination").GetString()!
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi khi lấy thông tin chuyến đi: {ex.Message}");
+                }
+        
+                if (tripDto != null)
+                {
+                    tickets.Add(new TicketInfo
+                    {
+                        booking = booking,
+                        payment = payment,
+                        trip = tripDto
+                    });
+                }
+            }
+        
+            if (!tickets.Any())
+            {
+                return new ApiResponse<List<TicketInfo>>(false, "Không có thông tin vé khả dụng.", null, "NotFound");
+            }
+        
+            return new ApiResponse<List<TicketInfo>>(true, "Tra cứu vé thành công", tickets, null);
+        }
     }
 }

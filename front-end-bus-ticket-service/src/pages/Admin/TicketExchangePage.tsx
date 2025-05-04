@@ -39,7 +39,7 @@ const TicketExchange: React.FC = () => {
       origin: 'Hồ Chí Minh',
       destination: 'Hà Nội',
       departureTime: '2023-06-15T08:00:00',
-      seatNumbers: ['A12', 'A13'], // 2 vé trong cùng 1 booking
+      seatNumbers: ['A12', 'A13'], 
       status: 'confirmed',
     },
     {
@@ -50,7 +50,7 @@ const TicketExchange: React.FC = () => {
       origin: 'Hồ Chí Minh',
       destination: 'Hà Nội',
       departureTime: '2023-06-15T08:00:00',
-      seatNumbers: ['B05'], // 1 vé
+      seatNumbers: ['B05'],
       status: 'confirmed',
     },
   ];
