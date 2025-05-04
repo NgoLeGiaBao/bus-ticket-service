@@ -1,110 +1,108 @@
 import React, { useState, useEffect } from 'react';
+import { createRoute, getAllRoutes, toggleRouteStatus, updateRoute } from '../../services/apiServices';
+import { Route, RouteFormData } from '../../interfaces/RouteAndTrip';
 
-interface Route {
-  id: string;
-  origin: string;
-  destination: string;
-  distance: number;
-  duration: number;
-  price: number;
-  isActive: boolean;
-}
+// interface Route {
+//   id: string;
+//   origin: string;
+//   destination: string;
+//   distance: number;
+//   duration: number;
+//   price: number;
+//   isActive: boolean;
+// }
 
 const RouteManagement: React.FC = () => {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [search, setSearch] = useState('');
-  const [newRoute, setNewRoute] = useState<Omit<Route, 'id'>>({
+  const [newRoute, setNewRoute] = useState<RouteFormData>({
     origin: '',
     destination: '',
     distance: 0,
-    duration: 0,
+    duration: "0",
     price: 0,
-    isActive: true,
+    is_active: true,
   });
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch data from API or use mock data
-    setRoutes([
-      {
-        id: '19b0374f-37b4-47b7-ba9f-949579889a2e',
-        origin: 'Hồ Chí Minh',
-        destination: 'Hà Nội',
-        distance: 300,
-        duration: 7,
-        price: 200000,
-        isActive: true,
-      },
-      {
-        id: '5e892675-9e09-4c8a-b94f-9cbf844bbc3',
-        origin: 'Hà Nội',
-        destination: 'Lao Cai',
-        distance: 100,
-        duration: 3,
-        price: 100000,
-        isActive: true,
-      },
-      {
-        id: 'cf16c352-5f55-4b73-8859-e965f8b338fe',
-        origin: 'Hà Nội',
-        destination: 'Hồ Chí Minh',
-        distance: 700,
-        duration: 30,
-        price: 750000,
-        isActive: true,
-      },
-    ]);
+    handleGetRoute();
   }, []);
 
-  const handleAddRoute = () => {
-    if (editingId) {
-      // Update existing route
-      setRoutes(
-        routes.map((route) =>
-          route.id === editingId ? { id: editingId, ...newRoute } : route
-        )
-      );
-      setEditingId(null);
-    } else {
-      // Add new route
-      const newId = crypto.randomUUID();
-      setRoutes([...routes, { id: newId, ...newRoute }]);
-    }
-    setNewRoute({
-      origin: '',
-      destination: '',
-      distance: 0,
-      duration: 0,
-      price: 0,
-      isActive: true,
-    });
-    setShowModal(false);
+  const handleGetRoute = async() => {
+    const res = await getAllRoutes();
+    setRoutes(res.data);
   };
+
+  // const handleAddRoute = () => {
+  //   if (editingId) {
+  //     // Update existing route
+  //     setRoutes(
+  //       routes.map((route) =>
+  //         route.id === editingId ? { id: editingId, ...newRoute } : route
+  //       )
+  //     );
+  //     setEditingId(null);
+  //   } else {
+  //     // Add new route
+  //     const newId = crypto.randomUUID();
+  //     setRoutes([...routes, { id: newId, ...newRoute }]);
+  //   }
+  //   setNewRoute({
+  //     origin: '',
+  //     destination: '',
+  //     distance: 0,
+  //     duration: 0,
+  //     price: 0,
+  //     is_active: true,
+  //   });
+  //   setShowModal(false);
+  // };
 
   const handleEdit = (route: Route) => {
     setNewRoute({
       origin: route.origin,
       destination: route.destination,
       distance: route.distance,
-      duration: route.duration,
+      duration: route.duration.toString(),
       price: route.price,
-      isActive: route.isActive,
+      is_active: route.is_active,
     });
     setEditingId(route.id);
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
-    setRoutes(routes.filter((route) => route.id !== id));
+  const handleAddOrUpdateRoute = async () => {
+    try {
+      if (editingId) {
+        await updateRoute(editingId, newRoute);
+      } else {
+        await createRoute(newRoute);
+      }
+      await handleGetRoute(); 
+      setEditingId(null);
+      setShowModal(false);
+      setNewRoute({
+        origin: '',
+        destination: '',
+        distance: 0,
+        duration: "0",
+        price: 0,
+        is_active: true,
+      });
+    } catch (error: any) {
+      alert(error.message || 'Có lỗi xảy ra!');
+    }
   };
 
-  const toggleStatus = (id: string) => {
-    setRoutes(
-      routes.map((route) =>
-        route.id === id ? { ...route, isActive: !route.isActive } : route
-      )
-    );
+  const toggleStatus = async (id: string) => {
+    try {
+      await toggleRouteStatus(id, !routes.find(route => route.id === id)?.is_active);
+      await handleGetRoute();
+    } catch (error: any) {
+      alert(error.message || 'Có lỗi xảy ra khi cập nhật trạng thái tuyến!');
+    }
   };
 
   const filteredRoutes = routes.filter((route) =>
@@ -137,18 +135,18 @@ const RouteManagement: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm đi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điểm đến</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khoảng cách (km)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời gian (giờ)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Giá (VND)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Điểm đi</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Điểm đến</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Khoảng cách (km)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thời gian (giờ)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Giá (VND)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Trạng thái</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thao tác</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredRoutes.map((route) => (
-              <tr key={route.id} className="hover:bg-gray-50">
+              <tr key={route.id} className="hover:bg-gray-50 text-center">
                 <td className="px-6 py-4 whitespace-nowrap">{route.origin}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{route.destination}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{route.distance}</td>
@@ -157,12 +155,12 @@ const RouteManagement: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      route.isActive
+                      route.is_active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}
                   >
-                    {route.isActive ? 'Hoạt động' : 'Ngừng hoạt động'}
+                    {route.is_active ? 'Hoạt động' : 'Ngừng hoạt động'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -176,14 +174,14 @@ const RouteManagement: React.FC = () => {
                     onClick={() => toggleStatus(route.id)}
                     className="text-yellow-600 hover:text-yellow-900 mr-3"
                   >
-                    {route.isActive ? 'Tắt' : 'Bật'}
+                    {route.is_active ? 'Tắt' : 'Bật'}
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => handleDelete(route.id)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Xóa
-                  </button>
+                  </button> */}
                 </td>
               </tr>
             ))}
@@ -209,7 +207,7 @@ const RouteManagement: React.FC = () => {
                     distance: 0,
                     duration: 0,
                     price: 0,
-                    isActive: true,
+                    is_active: true,
                   });
                 }}
                 className="text-gray-500 hover:text-gray-700"
@@ -296,9 +294,9 @@ const RouteManagement: React.FC = () => {
                   type="checkbox"
                   id="isActive"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  checked={newRoute.isActive}
+                  checked={newRoute.is_active}
                   onChange={(e) =>
-                    setNewRoute({ ...newRoute, isActive: e.target.checked })
+                    setNewRoute({ ...newRoute, is_active: e.target.checked })
                   }
                 />
                 <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
@@ -307,7 +305,7 @@ const RouteManagement: React.FC = () => {
               </div>
 
               <button
-                onClick={handleAddRoute}
+                onClick={handleAddOrUpdateRoute}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors mt-4"
               >
                 {editingId ? 'Cập nhật' : 'Thêm mới'}

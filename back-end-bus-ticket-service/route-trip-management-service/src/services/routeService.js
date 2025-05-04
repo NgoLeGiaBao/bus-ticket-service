@@ -125,13 +125,14 @@ const getRouteByIdService = async (id) => {
 };
 
 // Update a route by ID
-const updateRouteService = async (id, origin, destination, distance, duration, price) => {
+const updateRouteService = async (id, origin, destination, distance, duration, price, is_active) => {
     const { data, error } = await supabase.from('routes').update({
         origin,
         destination,
         distance,
         duration,
-        price
+        price,
+        is_active
     }).eq('id', id);
 
     if (error) {
@@ -140,6 +141,20 @@ const updateRouteService = async (id, origin, destination, distance, duration, p
 
     return data;
 };
+
+const toggleRouteStatusService = async (id, is_active) => {
+    const { data, error } = await supabase
+        .from('routes')
+        .update({ is_active })
+        .eq('id', id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data; 
+};
+
 
 // Delete a route by ID
 const deleteRouteService = async (id) => {
@@ -159,5 +174,6 @@ module.exports = {
     updateRouteService,
     deleteRouteService,
     getDestinationsFromOriginService,
-    getAllDestinationsService
+    getAllDestinationsService,
+    toggleRouteStatusService
 };

@@ -104,13 +104,30 @@ const getRouteByIdController = async (req, res) => {
 // Update route by ID
 const updateRouteController = async (req, res) => {
     const { id } = req.params;
-    const { origin, destination, distance, duration, price } = req.body;
+    const { origin, destination, distance, duration, price, is_active } = req.body;
 
     try {
-        const updatedRoute = await routeService.updateRouteService(id, origin, destination, distance, duration, price);
+        const updatedRoute = await routeService.updateRouteService(id, origin, destination, distance, duration, price, is_active);
         res.status(200).json({ success: true, message: 'Route updated successfully', data: updatedRoute });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Toggle route 
+const toggleRouteStatusController = async (req, res) => {
+    const { id } = req.params; 
+    const { is_active } = req.body; 
+  
+    try {
+        const updatedRoute = await routeService.toggleRouteStatusService(id, is_active);
+        return res.json({
+            message: 'Trạng thái tuyến đã được cập nhật.',
+            data: updatedRoute,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Lỗi khi cập nhật trạng thái tuyến' });
     }
 };
 
@@ -137,5 +154,6 @@ module.exports = {
     updateRouteController,
     deleteRouteController,
     getDestinationsFromOriginController,
-    getAllDestinationsController
+    getAllDestinationsController,
+    toggleRouteStatusController
 };

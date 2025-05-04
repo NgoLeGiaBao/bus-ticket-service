@@ -1,44 +1,63 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env.docker') });
 
-// Middleware to authenticate the JWT token
-function verifyToken(req, res, next) {
-    // Get the token from the Authorization header
-    const token = req.headers['authorization']?.split(' ')[1]; // Token format "Bearer <token>"
-    if (!token) {
-        return res.status(403).send({ message: 'Token is required' });
-    }
 
-    // Authenticate the token
-    jwt.verify(token, process.env.JWT_SECRET, { 
-        issuer: process.env.JWT_ISSUER,   
-        audience: process.env.JWT_AUDIENCE 
-    }, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({ message: 'Invalid or expired token' });
-        }
-
-        // Save the user information into the request object
-        req.user = decoded; 
-        next();
-    });
+if (process.env.NODE_ENV !== 'production') {
+  console.log('JWT Config:', {
+    SECRET: process.env.JWT_SECRET ? '***' : 'MISSING',
+    ISSUER: process.env.JWT_ISSUER,
+    AUDIENCE: process.env.JWT_AUDIENCE
+  });
 }
 
-// Middleware to check user role
+function verifyToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(403).json({ 
+      message: 'Authorization header must be in format: Bearer <token>' 
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('--- JWT Decode Debug ---');
+    console.log('Token:', token);
+  }
+
+  try {
+    const decoded = jwt.decode(token); 
+
+    if (!decoded) {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+
+    // Gán user vào request
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error('JWT Decode Error:', error);
+    return res.status(401).json({ message: 'Failed to decode token' });
+  }
+}
+
 function verifyRole(requiredRole) {
-    return (req, res, next) => {
-        // Check if user or role information is missing from the token
-        if (!req.user || !req.user.role) {
-            return res.status(403).send({ message: 'Access denied, role is missing' });
-        }
+  return (req, res, next) => {
+    if (!req.user?.role) {
+      return res.status(403).json({ message: 'Access denied, role information missing' });
+    }
 
-        // Check if the user's role matches the required role
-        if (req.user.role !== requiredRole) {
-            return res.status(403).send({ message: 'Forbidden: You do not have the required role' });
-        }
+    if (req.user.role !== requiredRole) {
+      return res.status(403).json({ 
+        message: `Forbidden: Required role '${requiredRole}'`,
+        yourRole: req.user.role
+      });
+    }
 
-        next();
-    };
+    next();
+  };
 }
 
 module.exports = { verifyToken, verifyRole };

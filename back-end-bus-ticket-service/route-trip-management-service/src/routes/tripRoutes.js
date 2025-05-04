@@ -26,4 +26,11 @@ router.delete('/trips/:id', verifyToken, verifyRole('Admin'), TripController.del
 // Check same route
 router.get('/same-route-trips', TripController.isSameRouteController);
 
+// Get trips by route ID
+router.get('/trips/route/:routeId', TripController.getTripsByRouteIdController);
+
+// Update trip status (Admin only)
+router.put('/trips/:id/status', verifyToken, verifyRole('Admin'), TripController.updateTripStatusController);
+
+
 module.exports = router;

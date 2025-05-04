@@ -1,12 +1,13 @@
 const supabase = require('../supabase');
 
 // Create a new trip
-const createTripService = async (tripDate, availableSeats, routeId) => {
+const createTripService = async (tripDate, availableSeats, routeId, price) => {
     const { data, error } = await supabase.from('trips').insert([
         {
             trip_date: tripDate,
             available_seats: availableSeats,
             route_id: routeId,
+            price: price
         }
     ]);
 
@@ -224,6 +225,34 @@ const isSameRoute = async (tripId1, tripId2) => {
     return trip1.route_id === trip2.route_id;
 };
 
+// Get trip by route id
+const getTripsByRouteIdService = async (routeId) => {
+    const { data, error } = await supabase
+        .from('trips')
+        .select('*, routes(*)')
+        .eq('route_id', routeId);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
+// Update trip status
+const updateTripStatusService = async (id, status) => {
+    const { data, error } = await supabase
+        .from('trips')
+        .update({ status })
+        .eq('id', id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
 module.exports = {
     createTripService,
     getTripsService,
@@ -233,5 +262,7 @@ module.exports = {
     addBookedSeats,
     removeBookedSeats,
     isSameRoute,
-    getAvailableTripsService
+    getAvailableTripsService,
+    getTripsByRouteIdService,
+    updateTripStatusService
 };

@@ -37,7 +37,7 @@ services:
       - ./staff-dispatch-service/.env
     networks:
       - kong-network
-  
+
   route-trip-management-service:
     build: ./route-trip-management-service
     container_name: route-trip-management-service
@@ -47,6 +47,9 @@ services:
       - ./route-trip-management-service/.env.docker
     networks:
       - kong-network
+    depends_on:
+      - rabbitmq
+
 
   booking-and-payment-service:
     build: ./booking-and-payment-service
@@ -57,6 +60,7 @@ services:
       - kong-network
     depends_on:
       - redis-server
+      - rabbitmq
     environment:
       - TZ=Asia/Ho_Chi_Minh
     volumes:

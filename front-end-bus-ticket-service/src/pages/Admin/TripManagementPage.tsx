@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createTrip, getAllRoutes } from '../../services/apiServices';
+import { RouteFormData } from '../../interfaces/RouteAndTrip';
+import { TripFormData } from './../../interfaces/RouteAndTrip';
 
 interface Trip {
   id: string;
@@ -15,6 +18,7 @@ interface Trip {
 const TripManagement: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [search, setSearch] = useState('');
+  const [routes, setRoutes] = useState<RouteFormData[]>([]);
   const [newTrip, setNewTrip] = useState<Omit<Trip, 'id'>>({
     routeId: '',
     departureTime: '',
@@ -65,33 +69,69 @@ const TripManagement: React.FC = () => {
         status: 'completed',
       },
     ]);
+    
+    hanldeGetRoutes();
+  
   }, []);
-
-  const handleAddTrip = () => {
+  const hanldeGetRoutes = async () => {
+    const res = await getAllRoutes();
+    setRoutes(res.data);
+    console.log(routes);
+  };
+  // const handleAddTrip = () => {
+  //   if (editingId) {
+  //     setTrips(
+  //       trips.map((trip) =>
+  //         trip.id === editingId ? { id: editingId, ...newTrip } : trip
+  //       )
+  //     );
+  //     setEditingId(null);
+  //   } else {
+  //     const newId = crypto.randomUUID();
+  //     setTrips([...trips, { id: newId, ...newTrip }]);
+  //   }
+  //   setNewTrip({
+  //     routeId: '',
+  //     departureTime: '',
+  //     arrivalTime: '',
+  //     driver: '',
+  //     vehicle: '',
+  //     availableSeats: 0,
+  //     price: 0,
+  //     status: 'active',
+  //   });
+  //   setShowModal(false);
+  // };
+  const handleAddOrUpdateTrip = () => {
     if (editingId) {
-      setTrips(
-        trips.map((trip) =>
-          trip.id === editingId ? { id: editingId, ...newTrip } : trip
-        )
-      );
-      setEditingId(null);
+      // setTrips(
+      //   trips.map((trip) =>
+      //     trip.id === editingId ? { id: editingId, ...newTrip } : trip
+      //   )
+      // );
+      // setEditingId(null);
     } else {
-      const newId = crypto.randomUUID();
-      setTrips([...trips, { id: newId, ...newTrip }]);
+      const tripFormData : TripFormData = {
+        tripDate: newTrip.departureTime, 
+        availableSeats: newTrip.vehicle === 'limousine' ? 34 : 36,  
+        routeId: newTrip.routeId, 
+        vehicle_type: newTrip.vehicle,  
+        price: newTrip.price
+      };
+      createTrip(tripFormData);
+      setNewTrip({
+        routeId: '',
+        departureTime: '',
+        arrivalTime: '',
+        driver: '',
+        vehicle: '',
+        availableSeats: 0,
+        price: 0,
+        status: 'active',
+      });
     }
-    setNewTrip({
-      routeId: '',
-      departureTime: '',
-      arrivalTime: '',
-      driver: '',
-      vehicle: '',
-      availableSeats: 0,
-      price: 0,
-      status: 'active',
-    });
     setShowModal(false);
   };
-
   const handleEdit = (trip: Trip) => {
     setNewTrip({
       routeId: trip.routeId,
@@ -130,6 +170,14 @@ const TripManagement: React.FC = () => {
       trip.driver.toLowerCase().includes(search.toLowerCase()) ||
       trip.vehicle.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleVehicleChange = (value: string, tripId: number) => {
+    setTrips((prevTrips) =>
+      prevTrips.map((trip) =>
+        trip.id === tripId ? { ...trip, vehicle: value } : trip
+      )
+    );
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -196,7 +244,7 @@ const TripManagement: React.FC = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredTrips.map((trip) => (
               <tr key={trip.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">{trip.routeId}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{trip.vehicle}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {new Date(trip.departureTime).toLocaleString()}
                 </td>
@@ -204,6 +252,22 @@ const TripManagement: React.FC = () => {
                   {new Date(trip.arrivalTime).toLocaleString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">{trip.driver}</td>
+                {/* <td className="px-6 py-4 whitespace-nowrap">
+                  <select
+                    value={trip.vehicle}
+                    onChange={(e) => handleVehicleChange(e.target.value, trip.id)}
+                    className="border px-2 py-1 rounded"
+                  >
+                    {[
+                      { value: 'limousine', label: 'Limousine' },
+                      { value: 'sleeper', label: 'Giường nằm' },
+                    ].map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </td>               */}
                 <td className="px-6 py-4 whitespace-nowrap">{trip.vehicle}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{trip.availableSeats}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{trip.price.toLocaleString()}</td>
@@ -273,20 +337,24 @@ const TripManagement: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mã tuyến
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Tuyến đường
                 </label>
-                <input
-                  type="text"
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <select
                   value={newTrip.routeId}
-                  onChange={(e) =>
-                    setNewTrip({ ...newTrip, routeId: e.target.value })
-                  }
-                />
+                  onChange={(e) => setNewTrip({ ...newTrip, routeId: e.target.value })}
+                  className="w-full p-2 mb-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Chọn tuyến --</option>
+                  {routes.map((route) => (
+                    <option key={route.id} value={route.id}>
+                      {`${route.origin.trim()} → ${route.destination.trim()} (${route.distance} km, ${route.price.toLocaleString()}đ)`}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4"> */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Giờ đi
@@ -301,7 +369,7 @@ const TripManagement: React.FC = () => {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Giờ đến
                   </label>
@@ -313,11 +381,11 @@ const TripManagement: React.FC = () => {
                       setNewTrip({ ...newTrip, arrivalTime: e.target.value })
                     }
                   />
-                </div>
-              </div>
+                </div> */}
+              {/* </div> */}
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Tài xế
                   </label>
@@ -329,41 +397,24 @@ const TripManagement: React.FC = () => {
                       setNewTrip({ ...newTrip, driver: e.target.value })
                     }
                   />
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Loại xe
                   </label>
-                  <input
-                    type="text"
+                  <select
                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newTrip.vehicle}
                     onChange={(e) =>
-                      setNewTrip({ ...newTrip, vehicle: e.target.value })
+                      setNewTrip({ ...newTrip, vehicle: e.target.value as 'limousine' | 'sleeper' })
                     }
-                  />
+                  >
+                    <option value="">-- Chọn loại xe --</option>
+                    <option value="limousine">Limousine</option>
+                    <option value="standard">Giường nằm</option>
+                  </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Số ghế trống
-                  </label>
-                  <input
-                    type="number"
-                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newTrip.availableSeats}
-                    onChange={(e) =>
-                      setNewTrip({
-                        ...newTrip,
-                        availableSeats: Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Giá (VND)
@@ -379,28 +430,58 @@ const TripManagement: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                {/* <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Số ghế trống
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={newTrip.availableSeats}
+                    onChange={(e) =>
+                      setNewTrip({
+                        ...newTrip,
+                        availableSeats: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div> */}
+
+                {/* <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Giá (VND)
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={newTrip.price}
+                    onChange={(e) =>
+                      setNewTrip({ ...newTrip, price: Number(e.target.value) })
+                    }
+                  />
+                </div> */}
+              </div>
+{/* 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Trạng thái
                 </label>
                 <select
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={newTrip.status}
-                  onChange={(e) =>
-                    setNewTrip({
-                      ...newTrip,
-                      status: e.target.value as 'active' | 'inactive' | 'completed',
-                    })
-                  }
+                  onChange={(e) => setNewTrip({ ...newTrip, status: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="active">Đang hoạt động</option>
-                  <option value="inactive">Ngừng hoạt động</option>
+                  <option value="">-- Chọn trạng thái chuyến xe --</option>
+                  <option value="scheduled">Đã lên lịch</option>
+                  <option value="ongoing">Đang chạy</option>
                   <option value="completed">Đã hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
                 </select>
-              </div>
+              </div> */}
 
               <button
-                onClick={handleAddTrip}
+                onClick={handleAddOrUpdateTrip}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors mt-4"
               >
                 {editingId ? 'Cập nhật' : 'Thêm mới'}

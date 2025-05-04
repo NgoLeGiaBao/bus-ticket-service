@@ -1,7 +1,7 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams } from "../interfaces/Auth";
 import { BookingRequest, BookingResponse, LookUpResponse } from "../interfaces/Reservation";
-import { AvailableTripResponse, DestinationResponse, ProvinceResponse } from "../interfaces/RouteAndTrip";
+import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
 
 //-- Identity APIs --//
@@ -86,6 +86,58 @@ export const getTripById = async (tripId: string): Promise<any> => {
     throw new Error(error?.response?.data?.message || "Failed to fetch trip details");
   }
 };
+
+// Get all routes
+export const getAllRoutes = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<Route>>(`/journeys/routes`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch routes");
+  }
+}
+
+// Create a route
+export const createRoute = async (data: RouteFormData): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<any>>('/journeys/routes', data);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create trip');
+  }
+};
+
+// Create a trip
+export const createTrip = async (data: TripFormData): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<any>>('/journeys/trips', data);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create trip');
+  }
+}
+
+// Update a route
+export const updateRoute = async (id: string, routeData: Omit<RouteFormData, 'id'>): Promise<any> => {
+  try {
+    const response = await axios.put(`/journeys/routes/${id}`, routeData);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Không thể cập nhật tuyến');
+  }
+};
+
+// Toggle route status
+export const toggleRouteStatus = async (id: string, is_active: boolean): Promise<any> => {
+  try {
+    const response = await axios.put(`/journeys/routes/${id}/toggle`, { is_active });
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Không thể cập nhật trạng thái tuyến');
+  }
+};
+
+
 
 //-- Reservation APIs --//
 // Create a new booking

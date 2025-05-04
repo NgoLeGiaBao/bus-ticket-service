@@ -25,4 +25,7 @@ router.put('/routes/:id', verifyToken, verifyRole('Admin'), RouteController.upda
 // Delete a route (Admin only)
 router.delete('/routes/:id', verifyToken, verifyRole('Admin'), RouteController.deleteRouteController);
 
+// Toggle route status (Admin only)
+router.put('/routes/:id/toggle', RouteController.toggleRouteStatusController);
+
 module.exports = router;

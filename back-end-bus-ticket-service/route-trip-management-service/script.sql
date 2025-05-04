@@ -24,3 +24,11 @@ CREATE TYPE vehicle_type_enum AS ENUM ('limousine', 'sleeper', 'standard');
 -- Add column
 ALTER TABLE trips
 ADD COLUMN vehicle_type vehicle_type_enum NOT NULL DEFAULT 'standard';
+
+
+-- Tạo ENUM cho trạng thái chuyến đi
+CREATE TYPE trip_status_enum AS ENUM ('scheduled', 'ongoing', 'completed', 'cancelled');
+
+-- Thêm cột trạng thái chuyến đi vào bảng trips
+ALTER TABLE trips
+ADD COLUMN status trip_status_enum NOT NULL DEFAULT 'scheduled';

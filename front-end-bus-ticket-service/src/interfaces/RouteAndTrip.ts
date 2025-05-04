@@ -28,6 +28,34 @@ export interface Trip {
   routes: TripRoute;
 }
 
+export interface RouteFormData {
+  origin: string;
+  destination: string;
+  distance: number;
+  duration: string;
+  price: number;
+  is_active: boolean;
+};
+
+// Routes
+export interface Route {
+  id: string;
+  origin: string;
+  destination: string;
+  distance: number;
+  duration: number;
+  price: number;
+  is_active: boolean;
+}
+
+export interface TripFormData {
+  tripDate: string;                 
+  availableSeats: number;           
+  routeId: string;                 
+  vehicle_type: string; 
+  price: number;
+}
+
 // Interface cho dữ liệu chuyến đi có sẵn (Available Trip)
 export type AvailableTripResponse = Trip[];
   
