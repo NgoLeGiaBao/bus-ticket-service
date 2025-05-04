@@ -82,7 +82,7 @@ namespace booking_and_payment_service.services
                 null
             );
         }
-        
+
         public async Task<ApiResponse<string>> HandleVNPayIPN(Dictionary<string, string> parameters)
         {
             var result = _vnpayAdapter.ProcessIPN(parameters);
@@ -148,5 +148,28 @@ namespace booking_and_payment_service.services
             );
         }
 
+        public async Task<ApiResponse<Payment>> UpdatePaymentStatusAsync(string bookingId)
+        {
+            var payment = await _context.Payments.FirstOrDefaultAsync(p => p.BookingId == bookingId);
+            if (payment == null)
+            {
+                return new ApiResponse<Payment>(
+                    false,
+                    "Payment not found",
+                    null,
+                    "NotFound"
+                );
+            }
+
+            payment.Status = "Success";
+            await _context.SaveChangesAsync();
+
+            return new ApiResponse<Payment>(
+                true,
+                "Payment updated",
+                payment,
+                null
+            );
+        }
     }
 }

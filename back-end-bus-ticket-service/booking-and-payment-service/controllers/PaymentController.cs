@@ -24,7 +24,7 @@ namespace booking_and_payment_service.controllers
         {
             var queryParams = Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString());
             var result = await _paymentService.HandleVNPayReturn(queryParams);
-        
+
             var redirectUrl = $"http://localhost:5173/booking-result?status={(result.Success ? "success" : "failure")}";
             return Redirect(redirectUrl);
         }
@@ -50,6 +50,14 @@ namespace booking_and_payment_service.controllers
         {
             var result = await _paymentService.GetPaymentByIdAsync(id);
             return StatusCode(result.Success ? 200 : 404, result);
+        }
+        
+        [HttpPut("update-status/{bookingId}")]
+        public async Task<IActionResult> UpdatePaymentStatus(string bookingId)
+        {
+            var result = await _paymentService.UpdatePaymentStatusAsync(bookingId);
+
+            return Ok(result);
         }
     }
 }

@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { changeSeatRequestFromCustomer, getTripByRouteId, lookupTicketByPhone } from '../../services/apiServices';
+import { 
+  changeSeatRequestFromCustomer, 
+  getTripByRouteId, 
+  lookupTicketByPhone, 
+  updatePaymentStatusSuccess
+} from '../../services/apiServices';
 import { ChangeSeatRequest } from '../../interfaces/Reservation';
 
 interface Ticket {
@@ -15,6 +20,10 @@ interface Ticket {
   trip_id: string;
   status: 'confirmed' | 'used' | 'cancelled';
   paymentStatus: 'pending' | 'success' | 'failed';
+  paymentId: string;
+  paymentMethod: string;
+  amount: number;
+  email: string | null;
 }
 
 interface Trip {
@@ -37,9 +46,7 @@ interface Trip {
   };
 }
 
-// Helper function to generate all possible seats for a vehicle type
 const generateAllSeats = (vehicleType: string): string[] => {
-  // This is a simplified version - adjust based on your actual seat maps
   if (vehicleType === 'limousine') {
     const rows = ['A', 'B'];
     const seats = [];
@@ -59,7 +66,6 @@ const generateAllSeats = (vehicleType: string): string[] => {
     }
     return seats;
   }
- 
 };
 
 const TicketExchange: React.FC = () => {
@@ -71,46 +77,64 @@ const TicketExchange: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [exchangeSuccess, setExchangeSuccess] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [showConfirmPaymentModal, setShowConfirmPaymentModal] = useState(false);
+  const [ticketToConfirmPayment, setTicketToConfirmPayment] = useState<Ticket | null>(null);
 
   const handleSearch = async () => {
-    const res = await lookupTicketByPhone(phoneNumber);
-    if (res.success) {
-      const mappedTickets: Ticket[] = res.data.map((item) => ({
-        id: item.booking.id,
-        bookingCode: item.booking.id,
-        passengerName: item.booking.customerName,
-        phoneNumber: item.booking.phoneNumber,
-        origin: item.trip.origin,
-        destination: item.trip.destination,
-        departureTime: item.trip.tripDate,
-        seatNumbers: item.booking.seatNumbers,
-        route_id: item.trip.routeId,
-        trip_id: item.booking.tripId,
-        status: item.booking.status === 'Booked' ? 'confirmed' : 
-                item.booking.status === 'Cancelled' ? 'cancelled' : 'used',
-        paymentStatus: item.payment.status.toLowerCase() as 'pending' | 'success' | 'failed'
-      }));
-      
-      setCustomerTickets(mappedTickets);
+    try {
+      const res = await lookupTicketByPhone(phoneNumber);
+      if (res.success) {
+        const mappedTickets: Ticket[] = res.data.map((item) => ({
+          id: item.booking.id,
+          bookingCode: item.booking.id,
+          passengerName: item.booking.customerName,
+          phoneNumber: item.booking.phoneNumber,
+          origin: item.trip.origin,
+          destination: item.trip.destination,
+          departureTime: item.trip.tripDate,
+          seatNumbers: item.booking.seatNumbers,
+          route_id: item.trip.routeId,
+          trip_id: item.booking.tripId,
+          status: item.booking.status === 'Booked' ? 'confirmed' : 
+                  item.booking.status === 'Cancelled' ? 'cancelled' : 'used',
+          paymentStatus: item.payment.status.toLowerCase() as 'pending' | 'success' | 'failed',
+          paymentId: item.payment.id,
+          paymentMethod: item.payment.method,
+          amount: item.payment.amount,
+          email: item.booking.email
+        }));
+        setCustomerTickets(mappedTickets);
+      }
+    } catch (error) {
+      console.error('Error searching tickets:', error);
+      setAlertMessage('Có lỗi xảy ra khi tìm kiếm vé');
+      setShowAlertModal(true);
+    } finally {
+      setSelectedTicket(null);
+      setSelectedTrip(null);
+      setSelectedSeats([]);
     }
-    setSelectedTicket(null);
-    setSelectedTrip(null);
-    setSelectedSeats([]);
   };
 
   const handleSelectTicket = async (ticket: Ticket) => {
     setSelectedTicket(ticket);
     setSelectedSeats([]);
-
-    const res = await getTripByRouteId(ticket.route_id);
-    if (res.success && res.data) {
-      const tripsForExchange = res.data.filter(
-        (trip) =>
-          trip.status === 'scheduled'
-      )
-      setAvailableTrips(tripsForExchange);
-    }
     
+    try {
+      const res = await getTripByRouteId(ticket.route_id);
+      if (res.success && res.data) {
+        const tripsForExchange = res.data.filter(
+          (trip) => trip.status === 'scheduled'
+        );
+        setAvailableTrips(tripsForExchange);
+      }
+    } catch (error) {
+      console.error('Error fetching trips:', error);
+      setAlertMessage('Có lỗi xảy ra khi tải danh sách chuyến');
+      setShowAlertModal(true);
+    }
   };
 
   const handleSelectTrip = (trip: Trip) => {
@@ -133,28 +157,106 @@ const TicketExchange: React.FC = () => {
 
   const handleExchange = async () => {
     if (!selectedTicket || !selectedTrip || selectedSeats.length === 0) return;
-    const dataExchange : ChangeSeatRequest = {
-      bookingId: selectedTicket.id,
-      oldTripId: selectedTicket.trip_id,
-      oldSeatNumbers: selectedTicket.seatNumbers,
-      newTripId: selectedTrip.id,
-      newSeatNumbers: selectedSeats
-    }
-    const res = await changeSeatRequestFromCustomer(dataExchange);
-    if (res.success) {
-      setTimeout(() => {
+    
+    try {
+      const dataExchange: ChangeSeatRequest = {
+        bookingId: selectedTicket.id,
+        oldTripId: selectedTicket.trip_id,
+        oldSeatNumbers: selectedTicket.seatNumbers,
+        newTripId: selectedTrip.id,
+        newSeatNumbers: selectedSeats
+      };
+      
+      const res = await changeSeatRequestFromCustomer(dataExchange);
+      if (res.success) {
         setExchangeSuccess(true);
         setShowConfirmModal(false);
-        // Refresh data
-        setCustomerTickets([]);
-        setSelectedTicket(null);
-        setAvailableTrips([]);
-        setSelectedTrip(null);
-        setSelectedSeats([]);
-      }, 1500);
-    } else {
-      alert("Change ticket failure");
-    } 
+        setCustomerTickets(customerTickets.filter(t => t.id !== selectedTicket.id));
+      } else {
+        setAlertMessage(`Đổi vé thất bại: ${res.message || 'Vui lòng thử lại'}`);
+        setShowAlertModal(true);
+      }
+    } catch (error) {
+      console.error('Error exchanging ticket:', error);
+      setAlertMessage('Có lỗi xảy ra khi đổi vé');
+      setShowAlertModal(true);
+    } finally {
+      setSelectedTicket(null);
+      setAvailableTrips([]);
+      setSelectedTrip(null);
+      setSelectedSeats([]);
+    }
+  };
+
+  const handlePrintTicket = (ticket: Ticket) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Vé xe ${ticket.bookingCode}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .ticket { border: 1px solid #000; padding: 15px; max-width: 400px; margin: 0 auto; }
+              .header { text-align: center; margin-bottom: 15px; }
+              .details { margin-bottom: 10px; }
+              .footer { text-align: center; margin-top: 15px; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="ticket">
+              <div class="header">
+                <h2>VÉ XE KHÁCH</h2>
+                <p>Mã vé: ${ticket.bookingCode}</p>
+              </div>
+              <div class="details">
+                <p><strong>Hành khách:</strong> ${ticket.passengerName}</p>
+                <p><strong>Tuyến:</strong> ${ticket.origin} → ${ticket.destination}</p>
+                <p><strong>Ngày giờ:</strong> ${formatDateTime(ticket.departureTime).date} ${formatDateTime(ticket.departureTime).time}</p>
+                <p><strong>Ghế:</strong> ${ticket.seatNumbers.join(', ')}</p>
+                <p><strong>Tổng tiền:</strong> ${ticket.amount.toLocaleString('vi-VN')}đ</p>
+              </div>
+              <div class="footer">
+                <p>Cảm ơn quý khách đã sử dụng dịch vụ</p>
+              </div>
+            </div>
+            <script>window.print();</script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const handleOpenConfirmPayment = (ticket: Ticket) => {
+    if (ticket.paymentStatus !== 'pending') return;
+    setTicketToConfirmPayment(ticket);
+    setShowConfirmPaymentModal(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!ticketToConfirmPayment) return;
+    
+    try {
+      const res = await updatePaymentStatusSuccess(ticketToConfirmPayment.bookingCode);
+      if (res.success) {
+        setCustomerTickets(customerTickets.map(t => 
+          t.id === ticketToConfirmPayment.id ? {...t, paymentStatus: 'success'} : t
+        ));
+        setAlertMessage('Xác nhận thanh toán thành công!');
+        setShowAlertModal(true);
+      } else {
+        setAlertMessage(`Xác nhận thanh toán thất bại: ${res.message || 'Vui lòng thử lại'}`);
+        setShowAlertModal(true);
+      }
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      setAlertMessage('Có lỗi xảy ra khi xác nhận thanh toán');
+      setShowAlertModal(true);
+    } finally {
+      setShowConfirmPaymentModal(false);
+      setTicketToConfirmPayment(null);
+    }
   };
 
   const formatDateTime = (dateTime: string) => {
@@ -165,10 +267,22 @@ const TicketExchange: React.FC = () => {
     };
   };
 
-  // Function to get available seats for display
   const getAvailableSeatsForDisplay = (trip: Trip): string[] => {
     const allSeats = generateAllSeats(trip.vehicle_type);
     return allSeats.filter(seat => !trip.booked_seats.includes(seat));
+  };
+
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Đã thanh toán</span>;
+      case 'pending':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Chờ thanh toán</span>;
+      case 'failed':
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Thanh toán lỗi</span>;
+      default:
+        return <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{status}</span>;
+    }
   };
 
   return (
@@ -211,22 +325,24 @@ const TicketExchange: React.FC = () => {
       {customerTickets.length > 0 && (
         <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">Danh sách vé có thể đổi</h2>
+            <h2 className="text-lg font-medium text-gray-900">Danh sách vé</h2>
           </div>
           <div className="divide-y divide-gray-200">
             {customerTickets.map((ticket) => {
               const time = formatDateTime(ticket.departureTime);
+              const isPending = ticket.paymentStatus === 'pending';
+              
               return (
                 <div
                   key={ticket.id}
-                  className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                    selectedTicket?.id === ticket.id ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => handleSelectTicket(ticket)}
+                  className={`p-4 hover:bg-gray-50 ${selectedTicket?.id === ticket.id ? 'bg-blue-50' : ''}`}
                 >
                   <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium">{ticket.passengerName}</h3>
+                    <div className="flex-1 cursor-pointer" onClick={() => handleSelectTicket(ticket)}>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium">{ticket.passengerName}</h3>
+                        {getPaymentStatusBadge(ticket.paymentStatus)}
+                      </div>
                       <p className="text-sm text-gray-600">
                         {ticket.origin} → {ticket.destination}
                       </p>
@@ -234,11 +350,37 @@ const TicketExchange: React.FC = () => {
                         {time.date} - {time.time} | 
                         Ghế: {ticket.seatNumbers.join(', ')} ({ticket.seatNumbers.length} vé)
                       </p>
+                      <p className="text-sm text-gray-600">
+                        Giá vé: {ticket.amount.toLocaleString('vi-VN')}đ | 
+                        Phương thức: {ticket.paymentMethod}
+                      </p>
                     </div>
-                    <div>
+                    <div className="flex flex-col items-end gap-2">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {ticket.bookingCode}
                       </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePrintTicket(ticket);
+                          }}
+                          className="px-2 py-1 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 text-sm"
+                        >
+                          In vé
+                        </button>
+                        {isPending && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenConfirmPayment(ticket);
+                            }}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 text-sm"
+                          >
+                            Xác nhận TT
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -350,7 +492,7 @@ const TicketExchange: React.FC = () => {
       {/* No results message */}
       {customerTickets.length === 0 && phoneNumber && (
         <div className="bg-white p-4 rounded-lg shadow text-center">
-          <p className="text-gray-600">Không tìm thấy vé nào có thể đổi cho số điện thoại này</p>
+          <p className="text-gray-600">Không tìm thấy vé nào cho số điện thoại này</p>
         </div>
       )}
 
@@ -439,6 +581,69 @@ const TicketExchange: React.FC = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {showAlertModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Thông báo</h2>
+              <button
+                onClick={() => setShowAlertModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mb-4">
+              <p>{alertMessage}</p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowAlertModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Payment Modal */}
+      {showConfirmPaymentModal && ticketToConfirmPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Xác nhận thanh toán</h2>
+              <button
+                onClick={() => setShowConfirmPaymentModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mb-4">
+              <p>Xác nhận thanh toán cho vé {ticketToConfirmPayment.bookingCode}?</p>
+              <p className="mt-2">Số tiền: {ticketToConfirmPayment.amount.toLocaleString('vi-VN')}đ</p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowConfirmPaymentModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleConfirmPayment}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Xác nhận
               </button>
             </div>
           </div>

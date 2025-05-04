@@ -35,31 +35,6 @@ const RouteManagement: React.FC = () => {
     setRoutes(res.data);
   };
 
-  // const handleAddRoute = () => {
-  //   if (editingId) {
-  //     // Update existing route
-  //     setRoutes(
-  //       routes.map((route) =>
-  //         route.id === editingId ? { id: editingId, ...newRoute } : route
-  //       )
-  //     );
-  //     setEditingId(null);
-  //   } else {
-  //     // Add new route
-  //     const newId = crypto.randomUUID();
-  //     setRoutes([...routes, { id: newId, ...newRoute }]);
-  //   }
-  //   setNewRoute({
-  //     origin: '',
-  //     destination: '',
-  //     distance: 0,
-  //     duration: 0,
-  //     price: 0,
-  //     is_active: true,
-  //   });
-  //   setShowModal(false);
-  // };
-
   const handleEdit = (route: Route) => {
     setNewRoute({
       origin: route.origin,
