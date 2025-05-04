@@ -182,6 +182,15 @@ export const createBooking = async (
   }
 };
 
+export const supportedBooking = async (payload: BookingRequest): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<BookingResponse>>(`/reservations/bookings/create`,payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch supported booking');
+  }
+}
+
 // Get booking by ID
 export const lookupTicket = async (phoneNumber: string, bookingId: string): Promise<any> => {
   try {

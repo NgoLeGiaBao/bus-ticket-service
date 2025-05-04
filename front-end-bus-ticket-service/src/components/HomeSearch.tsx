@@ -164,7 +164,7 @@ const HomeSearch: React.FC = () => {
 												onClick={() => {
 													setSelectedEndAddress(item);
 													setEndAddressSearchModalVisible(false);
-													fetchOriginsByDestination(item); // Fetch origins based on the selected destination
+													fetchOriginsByDestination(item);
 												}}
 											>
 												{item}
