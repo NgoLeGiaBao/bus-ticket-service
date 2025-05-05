@@ -223,7 +223,7 @@ export const lookupTicketByPhone = async (phoneNumber: string): Promise<any> => 
 // Change seat
 export const changeSeatRequestFromCustomer = async (data: ChangeSeatRequest) => {
   try {
-    const response = await axios.post('/api/booking/change-seat', data);
+    const response = await axios.post('/reservations/bookings/change-seat', data);
     return { success: true, data: response.data };
   } catch (error: any) {
     console.error('Change seat request failed:', error);
