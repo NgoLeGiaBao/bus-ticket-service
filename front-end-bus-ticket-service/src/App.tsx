@@ -22,6 +22,11 @@ import TicketExchange from './pages/Admin/TicketExchangePage';
 import BookingSupport from './pages/Admin/BookingSupportPage';
 import UserRoleManagement from './pages/Admin/UserRoleManagementPage';
 import UserManagement from './pages/Admin/UserManagementPage';
+import StaffRoutesPage from './pages/Admin/StaffRoutesPage';
+import DispatchAssignmentsPage from './pages/Admin/DispatchAssignmentsPage';
+import StaffUnavailabilityPage from './pages/Admin/StaffUnavailabilityPage';
+import Dashboard from './pages/Admin/DashBoard';
+import BookingManagement from './pages/Admin/BookingManagement';
 
 // Public Layout
 const PublicLayout = () => (
@@ -121,7 +126,7 @@ function App() {
         <Route index element={
             <>
               <PageTitle title="BHP Bus Line"/>
-              <HomePage />
+              <Dashboard />
             </>
           } />
         <Route path='/admin/operation/route-management' element ={
@@ -136,6 +141,12 @@ function App() {
             <TripManagement />
           </>
         }/>
+        <Route path='/admin/reservation/booking-data' element ={
+          <>
+            <PageTitle title="Dữ liệu vé xe"/>
+            <BookingManagement />
+          </>
+        }/>
         <Route path='/admin/reservation/change-ticket' element ={
           <>
             <PageTitle title="Hỗ trợ đổi vé"/>
@@ -146,6 +157,24 @@ function App() {
           <>
             <PageTitle title="Hỗ trợ đổi vé"/>
             <BookingSupport />
+          </>
+        }/>
+        <Route path='/admin/dispatch/staff-routes' element ={
+          <>
+            <PageTitle title="Phân công tuyến"/>
+            <StaffRoutesPage />
+          </>
+        }/>
+        <Route path='/admin/dispatch/dispatch-assignment' element ={
+          <>
+            <PageTitle title="Phân công điều phối"/>
+            <DispatchAssignmentsPage />
+          </>
+        }/>
+        <Route path='/admin/dispatch/staff-schedule' element ={
+          <>
+            <PageTitle title="Phân công điều phối"/>
+            <StaffUnavailabilityPage />
           </>
         }/>
         <Route path='/admin/user/assgin-role' element ={
