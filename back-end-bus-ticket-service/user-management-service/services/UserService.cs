@@ -93,13 +93,39 @@ namespace user_management_service.services
                     PhoneNumber = u.PhoneNumber,
                     Roles = u.UserRoles.Select(ur => new RoleDTO
                     {
-                        RoleId = ur.Role.Id,    
-                        RoleName = ur.Role.Name  
+                        RoleId = ur.Role.Id,
+                        RoleName = ur.Role.Name
                     }).ToList()
                 })
                 .ToListAsync();
 
             return new ApiResponse<List<UserWithRolesDTO>>(true, "Users retrieved successfully", users, null);
+        }
+
+        public async Task<ApiResponse<List<UserWithRolesDTO>>> GetAllUsersWithRolesDriver()
+        {
+            var users = await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Where(u => u.UserRoles.Any(ur => 
+                    ur.Role.Name == "Conductor" || ur.Role.Name == "Driver"))
+                .Select(u => new UserWithRolesDTO
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    Roles = u.UserRoles
+                        .Where(ur => ur.Role.Name == "Conductor" || ur.Role.Name == "Driver")
+                        .Select(ur => new RoleDTO
+                        {
+                            RoleId = ur.Role.Id,
+                            RoleName = ur.Role.Name
+                        }).ToList()
+                })
+                .ToListAsync();
+
+            return new ApiResponse<List<UserWithRolesDTO>>(true, "Filtered users retrieved successfully", users, null);
         }
     }
 }

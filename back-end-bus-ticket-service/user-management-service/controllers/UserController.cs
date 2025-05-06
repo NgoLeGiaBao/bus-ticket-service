@@ -49,5 +49,12 @@ namespace user_management_service.controllers{
             var response = await _userService.GetAllUsersWithRoles();
             return response.Success ? Ok(response) : BadRequest(response);
         }
+
+        [HttpGet("get-all-user-with-roles-driver")]
+        public async Task<IActionResult> GetAllUsersWithRoles()
+        {
+            var response = await _userService.GetAllUsersWithRolesDriver();
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
     }
 }

@@ -1,5 +1,6 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams, RolesForm } from "../interfaces/Auth";
+import { RouteAssignmentPayload } from "../interfaces/Dispatch";
 import { BookingRequest, BookingResponse, ChangeSeatRequest, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
@@ -43,6 +44,16 @@ export const postLogout = async (): Promise<any> => {
 export const getAllUsers = async (): Promise<any> => {
   try {
     const response = await axios.get<ApiResponse<any>>("/identity/user/get-all-users");
+    return response
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch users");
+  }
+}
+
+// Get All User With Roles Driver and Conductor
+export const getAllUsersWithRolesDriverAndConductor = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>("/identity/user/get-all-user-with-roles-driver");
     return response
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || "Failed to fetch users");
@@ -305,3 +316,37 @@ export const updatePaymentStatusSuccess = async (bookingId: string) => {
     return { success: false, error: error.response?.data || error.message };
   }
 };
+
+
+//-- Staff Dispatch Assignments APIs
+// Get all staff routes
+export const getAllStaffRoutes = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>('/dispatch-assignments/staff_routes');
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch staff routes');
+  }
+}
+
+// Assgin user staff routes
+export const createAssignUserToRoute = async (payload: RouteAssignmentPayload) => {
+  try {
+    const response = await axios.post('dispatch-assignments/staff_routes', payload); 
+    return response;
+  } catch (error) {
+    console.error('Failed to assign user to route:', error);
+    throw error;
+  }
+};
+
+// Update staff route status
+export const updateAssignUserToRoute = async (id: string, payload: RouteAssignmentPayload) => {
+  try {
+    const response = await axios.put(`dispatch-assignments/staff_routes/${id}`, payload);
+    return response;
+  } catch (error) {
+    console.error('Failed to update staff route:', error);
+    throw error;
+  }
+}
