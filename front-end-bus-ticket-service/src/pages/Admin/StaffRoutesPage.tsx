@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { assignUserToRoute, createAssignUserToRoute, getAllRoutes, getAllStaffRoutes, getAllUsersWithRolesDriverAndConductor, updateAssignUserToRoute } from '../../services/apiServices';
+import { createAssignUserToRoute, getAllRoutes, getAllStaffRoutes, getAllUsersWithRolesDriverAndConductor, updateAssignUserToRoute } from '../../services/apiServices';
 import { RouteAssignmentPayload } from '../../interfaces/Dispatch';
 import { FiUser, FiPhone, FiMail, FiPlus, FiEdit, FiTrash2, FiChevronDown, FiChevronUp, FiTruck, FiUsers } from 'react-icons/fi';
 
@@ -90,9 +90,9 @@ const StaffRoutesPage = () => {
     }));
   };
 
-  const getUserInfo = (userId: string) => {
-    return users.find(user => user.id === userId);
-  };
+  // const getUserInfo = (userId: string) => {
+  //   return users.find(user => user.id === userId);
+  // };
 
   const getRouteInfo = (routeId: string) => {
     return routeOptions.find(route => route.id === routeId);
@@ -162,10 +162,10 @@ const StaffRoutesPage = () => {
       };
     
       const res = isUpdate
-        ? await updateAssignUserToRoute(currentRoute.id, routeAssignmentPayload)
+        ? await updateAssignUserToRoute(currentRoute.id || "", routeAssignmentPayload)
         : await createAssignUserToRoute(routeAssignmentPayload);
-    
-      if (res.success) {
+
+        if (res.success) {
         fetchStaffRoutes();
       } else {
         console.warn("Assignment API call failed:", res);
@@ -581,7 +581,7 @@ const StaffRoutesPage = () => {
                               checked={currentRoute.roleassignments?.includes(role.value) || false}
                               onChange={(e) => handleRoleChange(role.value, e.target.checked)}
                               className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                              disabled={disableDriver}
+                              disabled={disableDriver || !currentRoute.userid}
                             />
                             <label htmlFor={`role-${role.value}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
                               {role.label}
