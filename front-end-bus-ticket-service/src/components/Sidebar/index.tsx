@@ -422,7 +422,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                       {/* Dropdown Menu */}
                       <div className={`translate transform overflow-hidden ${!open ? 'hidden' : ''}`}>
                         <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
-                          <li>
+                          {/* <li>
                             <NavLink
                               to="/admin/user/manage-role"
                               className={({ isActive }) =>
@@ -433,7 +433,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             >
                               Quản lý vai trò
                             </NavLink>
-                          </li>
+                          </li> */}
                           <li>
                             <NavLink
                               to="/admin/user/assgin-role"

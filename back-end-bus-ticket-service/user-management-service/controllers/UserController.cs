@@ -43,5 +43,11 @@ namespace user_management_service.controllers{
             var response = await _userService.ChangePassword(GetUserId(), request);
             return response.Success ? Ok(response) : Unauthorized(response);
         }
+        [HttpGet("get-all-users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var response = await _userService.GetAllUsersWithRoles();
+            return response.Success ? Ok(response) : BadRequest(response);
+        }
     }
 }

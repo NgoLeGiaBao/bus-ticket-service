@@ -4,6 +4,7 @@ using System.Text;
 
 using user_management_service.data;
 using user_management_service.dtos;
+using user_management_service.models;
 using user_management_service.responses;
 
 namespace user_management_service.services
@@ -77,6 +78,24 @@ namespace user_management_service.services
             await _context.SaveChangesAsync();
 
             return new ApiResponse<string>(true, "Password changed successfully", null, null);
+        }
+
+        public async Task<ApiResponse<List<UserWithRolesDTO>>> GetAllUsersWithRoles()
+        {
+            var users = await _context.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .Select(u => new UserWithRolesDTO
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email,
+                    PhoneNumber = u.PhoneNumber,
+                    Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+                })
+                .ToListAsync();
+        
+            return new ApiResponse<List<UserWithRolesDTO>>(true, "Users retrieved successfully", users, null);
         }
     }
 }

@@ -19,4 +19,12 @@ namespace user_management_service.dtos
         public string CurrentPassword { get; set; }
         public string NewPassword { get; set; }
     }
+    public class UserWithRolesDTO
+    {
+        public Guid Id { get; set; }
+        public string Username { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
+        public List<string> Roles { get; set; }
+    }
 }

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { createRole, deleteRole, getAllUsers, updateRole } from '../../services/apiServices';
+import { getAllRoles } from './../../services/apiServices';
 
 interface Permission {
   id: string;
@@ -17,7 +19,7 @@ interface User {
   id: string;
   username: string;
   email: string;
-  roles: Role[];
+  roles: string[];
   isActive: boolean;
 }
 
@@ -46,65 +48,37 @@ const UserRoleManagement: React.FC = () => {
 
   // Mock data initialization
   useEffect(() => {
-    // Mock permissions
-    const mockPermissions: Permission[] = [
-      { id: '1', name: 'user_management', description: 'Manage users' },
-      { id: '2', name: 'role_management', description: 'Manage roles' },
-      { id: '3', name: 'content_management', description: 'Manage content' },
-      { id: '4', name: 'settings_management', description: 'Manage settings' },
-    ];
-
-    // Mock roles
-    const mockRoles: Role[] = [
-      {
-        id: '1',
-        name: 'Admin',
-        description: 'Full system access',
-        permissions: mockPermissions,
-      },
-      {
-        id: '2',
-        name: 'Editor',
-        description: 'Content management access',
-        permissions: mockPermissions.filter(p => p.name.includes('content')),
-      },
-      {
-        id: '3',
-        name: 'Viewer',
-        description: 'Read-only access',
-        permissions: [],
-      },
-    ];
-
-    // Mock users
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        username: 'admin',
-        email: 'admin@example.com',
-        roles: [mockRoles[0]],
-        isActive: true,
-      },
-      {
-        id: '2',
-        username: 'editor1',
-        email: 'editor1@example.com',
-        roles: [mockRoles[1]],
-        isActive: true,
-      },
-      {
-        id: '3',
-        username: 'viewer1',
-        email: 'viewer1@example.com',
-        roles: [mockRoles[2]],
-        isActive: false,
-      },
-    ];
-
-    setPermissions(mockPermissions);
-    setRoles(mockRoles);
-    setUsers(mockUsers);
+    fetchRoles();
+    fetchAllUser();
   }, []);
+
+  // Get All User
+  const fetchAllUser = async () => {
+     const res = await getAllUsers()
+     setUsers(res.data);
+  };
+
+  // Fetch roles
+  const fetchRoles = async () => {
+    try {
+      const res = await getAllRoles();
+      if (res.success && Array.isArray(res.data)) {
+        const transformedRoles: Role[] = res.data.map((role: any) => {
+          let permissions: Permission[] = [];
+          return {
+            id: role.id,
+            name: role.name,
+            description: '-', 
+            permissions,
+          };
+        });
+  
+        setRoles(transformedRoles);
+      }
+    } catch (error) {
+      console.error('Failed to fetch roles', error);
+    }
+  };
 
   // User management functions
   const handleAddUser = () => {
@@ -142,20 +116,36 @@ const UserRoleManagement: React.FC = () => {
   };
 
   // Role management functions
-  const handleAddRole = () => {
-    if (editingRoleId) {
-      setRoles(roles.map(role =>
-        role.id === editingRoleId ? { id: editingRoleId, ...newRole } : role
-      ));
+  const handleAddRole = async () => {
+    if(editingRoleId) {
+      const res = await updateRole(editingRoleId, newRole);
+      if (res.success) {
+        fetchRoles();
+        resetRoleForm();
+        setShowRoleModal(false);
+      }
     } else {
-      const newId = crypto.randomUUID();
-      setRoles([...roles, { id: newId, ...newRole }]);
+      const res = await createRole(newRole);
+      if (res.success) {
+        fetchRoles();
+        resetRoleForm();
+        setShowRoleModal(false);
+      }
     }
-    resetRoleForm();
-    setShowRoleModal(false);
   };
 
-  const handleEditRole = (role: Role) => {
+  const handleEditRole = async (role: Role) => {
+    // setShowRoleModal(true);
+    // setEditingRoleId(role.id);
+    // setRoles 
+    // const roleForm : RolesForm = {
+    //   name: role.name,
+    // }
+    // const res = await updateRole(role.id, roleForm);
+    // if (res.success) {
+    //   fetchRoles();
+    //   setShowRoleModal(false);
+    // }
     setNewRole({
       name: role.name,
       description: role.description,
@@ -165,8 +155,11 @@ const UserRoleManagement: React.FC = () => {
     setShowRoleModal(true);
   };
 
-  const handleDeleteRole = (id: string) => {
-    setRoles(roles.filter(role => role.id !== id));
+  const handleDeleteRole = async(id: string) => {
+    const res = await deleteRole(id);
+    if (res.success) {
+      fetchRoles();
+    }
   };
 
   // Form reset functions
@@ -208,13 +201,15 @@ const UserRoleManagement: React.FC = () => {
       {active ? 'Active' : 'Inactive'}
     </span>
   );
+  
 
   const PermissionBadge: React.FC<{ permission: Permission }> = ({ permission }) => (
     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
       {permission.name}
     </span>
   );
-
+  
+  
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -268,46 +263,68 @@ const UserRoleManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Username</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Roles</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr key={user.id} className="hover:bg-gray-50 text-center">
                   <td className="px-6 py-4 whitespace-nowrap">{user.username}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                   <td className="px-6 py-4">
-                    {user.roles.map(role => (
-                      <span key={role.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 mr-1 mb-1">
-                        {role.name}
-                      </span>
-                    ))}
+                    {user.roles.map((role) => {
+                      let color = {
+                        bg: 'bg-gray-100',
+                        text: 'text-gray-800'
+                      };
+                    
+                      switch (role) {
+                        case 'Admin':
+                          color = { bg: 'bg-purple-100', text: 'text-purple-800' };
+                          break;
+                        case 'Customer':
+                          color = { bg: 'bg-blue-100', text: 'text-blue-800' };
+                          break;
+                        case 'Employee':
+                          color = { bg: 'bg-green-100', text: 'text-green-800' };
+                          break;
+                      }
+                    
+                      return (
+                        <span
+                          key={role}
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color.bg} ${color.text} mr-1 mb-1`}
+                        >
+                          {role}
+                        </span>
+                      );
+                    })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge active={user.isActive} />
+                    <StatusBadge active={!user.isActive} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={() => handleEditUser(user)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
                       onClick={() => toggleUserStatus(user.id)}
                       className="text-yellow-600 hover:text-yellow-900 mr-3"
                     >
-                      {user.isActive ? 'Deactivate' : 'Activate'}
+                      {!user.isActive ? 'Deactivate' : 'Activate'}
                     </button>
                     <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      Xoá
                     </button>
                   </td>
                 </tr>
@@ -323,15 +340,15 @@ const UserRoleManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permissions</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Permissions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRoles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50">
+                <tr key={role.id} className="hover:bg-gray-50 text-center">
                   <td className="px-6 py-4 whitespace-nowrap font-medium">{role.name}</td>
                   <td className="px-6 py-4">{role.description}</td>
                   <td className="px-6 py-4">
@@ -346,13 +363,13 @@ const UserRoleManagement: React.FC = () => {
                       onClick={() => handleEditRole(role)}
                       className="text-blue-600 hover:text-blue-900 mr-3"
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
                       onClick={() => handleDeleteRole(role.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Delete
+                      Xoá
                     </button>
                   </td>
                 </tr>

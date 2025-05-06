@@ -1,5 +1,5 @@
 import { ApiResponse } from "../interfaces/ApiResponse";
-import { AuthResponse, LoginParams, RegisterParams } from "../interfaces/Auth";
+import { AuthResponse, LoginParams, RegisterParams, RolesForm } from "../interfaces/Auth";
 import { BookingRequest, BookingResponse, ChangeSeatRequest, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
@@ -38,6 +38,56 @@ export const postLogout = async (): Promise<any> => {
       throw new Error("An unexpected error occurred");
     }
   };
+
+// Get All Users
+export const getAllUsers = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>("/identity/user/get-all-users");
+    return response
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch users");
+  }
+}
+
+// Get All Role
+export const getAllRoles = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>("/identity/roles");
+    return response
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch roles");
+  }
+}
+
+// Create Roles
+export const createRole = async (data: RolesForm): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<any>>('/identity/roles', data);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create role');
+  }
+};
+
+// Update Roles
+export const updateRole = async (id: string, data: RolesForm): Promise<any> => {
+  try {
+    const response = await axios.put<ApiResponse<any>>(`/identity/roles/${id}`, data);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to update role');
+  }
+};
+
+// Delete Roles
+export const deleteRole = async (id: string): Promise<any> => {
+  try {
+    const response = await axios.delete<ApiResponse<any>>(`/identity/roles/${id}`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to delete role');
+  }
+};
 
 
 //-- Journey APIs --//
