@@ -89,6 +89,20 @@ export const deleteRole = async (id: string): Promise<any> => {
   }
 };
 
+export const settingRoles = async(userId: string, roleId: string, isAssign: boolean): Promise<any> => {
+  try {
+    if (isAssign) {
+      const response = await axios.post<ApiResponse<any>>(`/identity/roles/assign/${userId}/${roleId}`);
+      return response;
+    } else {
+      const response = await axios.delete<ApiResponse<any>>(`/identity/roles/remove/${userId}/${roleId}`);
+      return response
+    }
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to update role');
+  }
+}
+
 
 //-- Journey APIs --//
 // Get All Provinces (API to fetch provinces data)

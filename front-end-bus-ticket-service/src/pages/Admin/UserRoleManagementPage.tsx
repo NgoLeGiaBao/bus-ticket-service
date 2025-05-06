@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { createRole, deleteRole, getAllUsers, updateRole } from '../../services/apiServices';
+import { createRole, deleteRole, getAllUsers, settingRoles, updateRole } from '../../services/apiServices';
 import { getAllRoles } from './../../services/apiServices';
+
+interface Role {
+  roleId: string;
+  roleName: string;
+}
+
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  phoneNumber: string;
+  roles: Role[];
+  isActive?: boolean;
+}
 
 interface Permission {
   id: string;
@@ -8,40 +22,35 @@ interface Permission {
   description: string;
 }
 
-interface Role {
+interface FullRole {
   id: string;
   name: string;
   description: string;
   permissions: Permission[];
 }
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  roles: string[];
-  isActive: boolean;
-}
-
 const UserRoleManagement: React.FC = () => {
   // State management
   const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<FullRole[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [search, setSearch] = useState('');
   const [newUser, setNewUser] = useState<Omit<User, 'id'>>({
     username: '',
     email: '',
+    phoneNumber: '',
     roles: [],
     isActive: true,
   });
-  const [newRole, setNewRole] = useState<Omit<Role, 'id'>>({
+  const [newRole, setNewRole] = useState<Omit<FullRole, 'id'>>({
     name: '',
     description: '',
     permissions: [],
   });
   const [showUserModal, setShowUserModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showRoleAssignmentModal, setShowRoleAssignmentModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
@@ -54,8 +63,25 @@ const UserRoleManagement: React.FC = () => {
 
   // Get All User
   const fetchAllUser = async () => {
-     const res = await getAllUsers()
-     setUsers(res.data);
+    try {
+      const res = await getAllUsers(); 
+      if (res.success && Array.isArray(res.data)) {
+        const transformedUsers: User[] = res.data.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          isActive: true,
+          roles: user.roles.map((role: any) => ({
+            roleId: role.roleId,
+            roleName: role.roleName
+          }))
+        }));
+        setUsers(transformedUsers);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
   };
 
   // Fetch roles
@@ -63,20 +89,16 @@ const UserRoleManagement: React.FC = () => {
     try {
       const res = await getAllRoles();
       if (res.success && Array.isArray(res.data)) {
-        const transformedRoles: Role[] = res.data.map((role: any) => {
-          let permissions: Permission[] = [];
-          return {
-            id: role.id,
-            name: role.name,
-            description: '-', 
-            permissions,
-          };
-        });
-  
+        const transformedRoles: FullRole[] = res.data.map((role: any) => ({
+          id: role.id,
+          name: role.name,
+          description: role.description || '-',
+          permissions: role.permissions || []
+        }));
         setRoles(transformedRoles);
       }
     } catch (error) {
-      console.error('Failed to fetch roles', error);
+      console.error('Error fetching roles:', error);
     }
   };
 
@@ -98,8 +120,9 @@ const UserRoleManagement: React.FC = () => {
     setNewUser({
       username: user.username,
       email: user.email,
+      phoneNumber: user.phoneNumber,
       roles: user.roles,
-      isActive: user.isActive,
+      isActive: user.isActive ?? true,
     });
     setEditingUserId(user.id);
     setShowUserModal(true);
@@ -134,18 +157,7 @@ const UserRoleManagement: React.FC = () => {
     }
   };
 
-  const handleEditRole = async (role: Role) => {
-    // setShowRoleModal(true);
-    // setEditingRoleId(role.id);
-    // setRoles 
-    // const roleForm : RolesForm = {
-    //   name: role.name,
-    // }
-    // const res = await updateRole(role.id, roleForm);
-    // if (res.success) {
-    //   fetchRoles();
-    //   setShowRoleModal(false);
-    // }
+  const handleEditRole = (role: FullRole) => {
     setNewRole({
       name: role.name,
       description: role.description,
@@ -162,11 +174,47 @@ const UserRoleManagement: React.FC = () => {
     }
   };
 
+  // Role assignment functions
+  const openRoleAssignmentModal = (user: User) => {
+    setSelectedUser(user);
+    setShowRoleAssignmentModal(true);
+  };
+
+  const handleAssignRoleToUser = async (userId: string, roleId: string, isAssign: boolean) => {
+    const res = await settingRoles(userId, roleId, isAssign);
+    if (res.success) {
+      const res = await getAllUsers();
+      if (res.success && Array.isArray(res.data)) {
+        const transformedUsers: User[] = res.data.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          isActive: true,
+          roles: user.roles.map((role: any) => ({
+            roleId: role.roleId,
+            roleName: role.roleName
+          }))
+        }));
+        setUsers(transformedUsers);
+        
+        // Cập nhật selectedUser nếu đang mở modal
+        if (showRoleAssignmentModal && selectedUser) {
+          const updatedUser = transformedUsers.find(u => u.id === userId);
+          if (updatedUser) {
+            setSelectedUser(updatedUser);
+          }
+        }
+      }
+    }
+  };
+
   // Form reset functions
   const resetUserForm = () => {
     setNewUser({
       username: '',
       email: '',
+      phoneNumber: '',
       roles: [],
       isActive: true,
     });
@@ -185,7 +233,8 @@ const UserRoleManagement: React.FC = () => {
   // Filter functions
   const filteredUsers = users.filter(user =>
     user.username.toLowerCase().includes(search.toLowerCase()) ||
-    user.email.toLowerCase().includes(search.toLowerCase())
+    user.email.toLowerCase().includes(search.toLowerCase()) ||
+    user.phoneNumber.toLowerCase().includes(search.toLowerCase())
   );
 
   const filteredRoles = roles.filter(role =>
@@ -194,39 +243,70 @@ const UserRoleManagement: React.FC = () => {
   );
 
   // Helper components
-  const StatusBadge: React.FC<{ active: boolean }> = ({ active }) => (
+  const StatusBadge: React.FC<{ active?: boolean }> = ({ active }) => (
     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
       active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
     }`}>
-      {active ? 'Active' : 'Inactive'}
+      {active ? 'Hoạt động' : 'Không hoạt động'}
     </span>
   );
   
-
   const PermissionBadge: React.FC<{ permission: Permission }> = ({ permission }) => (
     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
       {permission.name}
     </span>
   );
   
+  const RoleBadge: React.FC<{ role: Role }> = ({ role }) => {
+    let color = {
+      bg: 'bg-gray-100',
+      text: 'text-gray-800'
+    };
   
+    switch (role.roleName) {
+      case 'Admin':
+        color = { bg: 'bg-purple-100', text: 'text-purple-800' };
+        break;
+      case 'Employee':
+        color = { bg: 'bg-green-100', text: 'text-green-800' };
+        break;
+      case 'Customer':
+        color = { bg: 'bg-blue-100', text: 'text-blue-800' };
+        break;
+      case 'Driver':
+        color = { bg: 'bg-yellow-100', text: 'text-yellow-800' };
+        break;
+    }
+  
+    return (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color.bg} ${color.text} mr-1 mb-1`}
+      >
+        {role.roleName}
+      </span>
+    );
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">User & Role Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Quản lý Người dùng & Vai trò</h1>
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Tìm kiếm..."
             className="w-64 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <button
-            onClick={() => activeTab === 'users' ? setShowUserModal(true) : setShowRoleModal(true)}
+            // onClick={() => activeTab === 'users' ? setShowUserModal(true) : setShowRoleModal(true)}
+            onClick={() => activeTab === 'users' ? null : setShowRoleModal(true)}
+
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
           >
-            {activeTab === 'users' ? '+ Add User' : '+ Add Role'}
+            {/* {activeTab === 'users' ? '+ Thêm người dùng' : '+ Thêm vai trò'} */}
+            {activeTab === 'users' ? null : '+ Thêm vai trò'}
           </button>
         </div>
       </div>
@@ -242,7 +322,7 @@ const UserRoleManagement: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Users
+            Người dùng
           </button>
           <button
             onClick={() => setActiveTab('roles')}
@@ -252,7 +332,7 @@ const UserRoleManagement: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            Roles
+            Vai trò
           </button>
         </nav>
       </div>
@@ -263,11 +343,12 @@ const UserRoleManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Username</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Tên đăng nhập</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Roles</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Số điện thoại</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Vai trò</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -275,37 +356,16 @@ const UserRoleManagement: React.FC = () => {
                 <tr key={user.id} className="hover:bg-gray-50 text-center">
                   <td className="px-6 py-4 whitespace-nowrap">{user.username}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.phoneNumber}</td>
                   <td className="px-6 py-4">
-                    {user.roles.map((role) => {
-                      let color = {
-                        bg: 'bg-gray-100',
-                        text: 'text-gray-800'
-                      };
-                    
-                      switch (role) {
-                        case 'Admin':
-                          color = { bg: 'bg-purple-100', text: 'text-purple-800' };
-                          break;
-                        case 'Customer':
-                          color = { bg: 'bg-blue-100', text: 'text-blue-800' };
-                          break;
-                        case 'Employee':
-                          color = { bg: 'bg-green-100', text: 'text-green-800' };
-                          break;
-                      }
-                    
-                      return (
-                        <span
-                          key={role}
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${color.bg} ${color.text} mr-1 mb-1`}
-                        >
-                          {role}
-                        </span>
-                      );
-                    })}
+                    <div className="flex flex-wrap justify-center">
+                      {user.roles.map((role) => (
+                        <RoleBadge key={role.roleId} role={role} />
+                      ))}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge active={!user.isActive} />
+                    <StatusBadge active={user.isActive} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
@@ -315,16 +375,22 @@ const UserRoleManagement: React.FC = () => {
                       Sửa
                     </button>
                     <button
+                      onClick={() => openRoleAssignmentModal(user)}
+                      className="text-green-600 hover:text-green-900 mr-3"
+                    >
+                      Phân quyền
+                    </button>
+                    {/* <button
                       onClick={() => toggleUserStatus(user.id)}
                       className="text-yellow-600 hover:text-yellow-900 mr-3"
                     >
-                      {!user.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
+                      {user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                    </button> */}
                     <button
                       onClick={() => handleDeleteUser(user.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Xoá
+                      Xóa
                     </button>
                   </td>
                 </tr>
@@ -340,10 +406,10 @@ const UserRoleManagement: React.FC = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Permissions</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Tên vai trò</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Mô tả</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Quyền hạn</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -352,10 +418,11 @@ const UserRoleManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap font-medium">{role.name}</td>
                   <td className="px-6 py-4">{role.description}</td>
                   <td className="px-6 py-4">
-                    <div className="flex flex-wrap">
+                    <div className="flex flex-wrap justify-center">
                       {role.permissions.map(permission => (
                         <PermissionBadge key={permission.id} permission={permission} />
                       ))}
+                      -
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -369,7 +436,7 @@ const UserRoleManagement: React.FC = () => {
                       onClick={() => handleDeleteRole(role.id)}
                       className="text-red-600 hover:text-red-900"
                     >
-                      Xoá
+                      Xóa
                     </button>
                   </td>
                 </tr>
@@ -385,7 +452,7 @@ const UserRoleManagement: React.FC = () => {
           <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">
-                {editingUserId ? 'Edit User' : 'Add New User'}
+                {editingUserId ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
               </h2>
               <button
                 onClick={() => {
@@ -401,7 +468,7 @@ const UserRoleManagement: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
+                  Tên đăng nhập
                 </label>
                 <input
                   type="text"
@@ -429,18 +496,32 @@ const UserRoleManagement: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Roles
+                  Số điện thoại
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newUser.phoneNumber}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, phoneNumber: e.target.value })
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vai trò
                 </label>
                 <select
                   multiple
                   className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
-                  value={newUser.roles.map(role => role.id)}
+                  value={newUser.roles.map(role => role.roleId)}
                   onChange={(e) => {
-                    const selectedIds = Array.from(e.target.selectedOptions, option => option.value);
-                    setNewUser({
-                      ...newUser,
-                      roles: roles.filter(role => selectedIds.includes(role.id)),
-                    });
+                    const selectedOptions = Array.from(e.target.selectedOptions, option => ({
+                      roleId: option.value,
+                      roleName: roles.find(r => r.id === option.value)?.name || ''
+                    }));
+                    setNewUser({ ...newUser, roles: selectedOptions });
                   }}
                 >
                   {roles.map(role => (
@@ -462,7 +543,7 @@ const UserRoleManagement: React.FC = () => {
                   }
                 />
                 <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
-                  Active User
+                  Kích hoạt tài khoản
                 </label>
               </div>
 
@@ -470,7 +551,7 @@ const UserRoleManagement: React.FC = () => {
                 onClick={handleAddUser}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors mt-4"
               >
-                {editingUserId ? 'Update User' : 'Add User'}
+                {editingUserId ? 'Cập nhật' : 'Thêm mới'}
               </button>
             </div>
           </div>
@@ -483,7 +564,7 @@ const UserRoleManagement: React.FC = () => {
           <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">
-                {editingRoleId ? 'Edit Role' : 'Add New Role'}
+                {editingRoleId ? 'Chỉnh sửa vai trò' : 'Thêm vai trò mới'}
               </h2>
               <button
                 onClick={() => {
@@ -499,7 +580,7 @@ const UserRoleManagement: React.FC = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role Name
+                  Tên vai trò
                 </label>
                 <input
                   type="text"
@@ -513,7 +594,7 @@ const UserRoleManagement: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  Mô tả
                 </label>
                 <textarea
                   className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -526,7 +607,7 @@ const UserRoleManagement: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Permissions
+                  Quyền hạn
                 </label>
                 <select
                   multiple
@@ -552,7 +633,61 @@ const UserRoleManagement: React.FC = () => {
                 onClick={handleAddRole}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors mt-4"
               >
-                {editingRoleId ? 'Update Role' : 'Add Role'}
+                {editingRoleId ? 'Cập nhật' : 'Thêm mới'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Assignment Modal */}
+      {showRoleAssignmentModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                Phân quyền cho {selectedUser.username}
+              </h2>
+              <button
+                onClick={() => setShowRoleAssignmentModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Danh sách vai trò
+                </label>
+                <div className="border rounded p-2 max-h-60 overflow-y-auto">
+                  {roles.map(role => {
+                    const hasRole = selectedUser.roles.some(r => r.roleId === role.id);
+                    return (
+                      <div key={role.id} className="flex items-center justify-between p-2 hover:bg-gray-50">
+                        <span>{role.name}</span>
+                        <button
+                          onClick={() => handleAssignRoleToUser(selectedUser.id, role.id, !hasRole)}
+                          className={`px-3 py-1 rounded text-sm ${
+                            hasRole 
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                          }`}
+                        >
+                          {hasRole ? 'Gỡ bỏ' : 'Thêm vào'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowRoleAssignmentModal(false)}
+                className="w-full bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition-colors mt-4"
+              >
+                Đóng
               </button>
             </div>
           </div>

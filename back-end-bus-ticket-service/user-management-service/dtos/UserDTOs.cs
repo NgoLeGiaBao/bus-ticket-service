@@ -25,6 +25,11 @@ namespace user_management_service.dtos
         public string Username { get; set; }
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public List<string> Roles { get; set; }
+        public List<RoleDTO> Roles { get; set; }
+    }
+    public class RoleDTO
+    {
+        public Guid RoleId { get; set; }
+        public string RoleName { get; set; }
     }
 }

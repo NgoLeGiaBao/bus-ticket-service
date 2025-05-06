@@ -46,7 +46,7 @@ const AdminLayout = () => (
 );
 
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const { pathname } = useLocation();
 

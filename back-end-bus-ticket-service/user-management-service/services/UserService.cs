@@ -91,10 +91,14 @@ namespace user_management_service.services
                     Username = u.Username,
                     Email = u.Email,
                     PhoneNumber = u.PhoneNumber,
-                    Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+                    Roles = u.UserRoles.Select(ur => new RoleDTO
+                    {
+                        RoleId = ur.Role.Id,    
+                        RoleName = ur.Role.Name  
+                    }).ToList()
                 })
                 .ToListAsync();
-        
+
             return new ApiResponse<List<UserWithRolesDTO>>(true, "Users retrieved successfully", users, null);
         }
     }
