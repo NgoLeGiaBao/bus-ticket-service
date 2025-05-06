@@ -1,507 +1,329 @@
-import React, { useState, useEffect } from 'react';
-// import { Booking } from '../../interfaces/Booking';
-interface Booking {
+import React, { useEffect, useState } from 'react';
+import { getAllBookings} from '../../services/apiServices';
+
+interface BookingData {
+  booking: {
     id: string;
-    user_id: string;
-    trip_id: string;
-    seats: { seat_number: string; price: number }[];
-    total_price: number;
+    phoneNumber: string;
+    email: string | null;
+    customerName: string;
+    tripId: string;
+    seatNumbers: string[];
+    bookingTime: string;
     status: string;
-    payment_status: string;
-    created_at: string;
-}
-interface BookingWithDetails extends Booking {
-  trip: {
-    id: string;
-    trip_date: string;
-    route_id: string;
-    routes: {
-      origin: string;
-      destination: string;
-    };
-    vehicle_type: string;
-    price: number;
   };
-  user: {
-    name: string;
-    email: string;
-    phone: string;
+  payment: {
+    id: string;
+    bookingId: string;
+    amount: number;
+    paymentTime: string;
+    status: string;
+    method: string;
+  };
+  trip: {
+    tripDate: string;
+    origin: string;
+    destination: string;
+    routeId: string;
   };
 }
 
 const BookingManagement: React.FC = () => {
-  // Mock data thay thế cho API calls
-  const mockBookings: BookingWithDetails[] = [
-    {
-      id: 'booking-1',
-      user_id: 'user-1',
-      trip_id: 'trip-1',
-      seats: [
-        { seat_number: 'A1', price: 150000 },
-        { seat_number: 'A2', price: 150000 }
-      ],
-      total_price: 300000,
-      status: 'pending',
-      payment_status: 'pending',
-      created_at: '2023-05-15T10:30:00Z',
-      trip: {
-        id: 'trip-1',
-        trip_date: '2023-05-20T08:00:00Z',
-        route_id: 'route-1',
-        routes: {
-          origin: 'Hà Nội',
-          destination: 'Hải Phòng'
-        },
-        vehicle_type: 'limousine',
-        price: 150000
-      },
-      user: {
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@example.com',
-        phone: '0987654321'
-      }
-    },
-    {
-      id: 'booking-2',
-      user_id: 'user-2',
-      trip_id: 'trip-2',
-      seats: [
-        { seat_number: 'B3', price: 200000 }
-      ],
-      total_price: 200000,
-      status: 'confirmed',
-      payment_status: 'paid',
-      created_at: '2023-05-16T14:45:00Z',
-      trip: {
-        id: 'trip-2',
-        trip_date: '2023-05-21T10:00:00Z',
-        route_id: 'route-2',
-        routes: {
-          origin: 'Hồ Chí Minh',
-          destination: 'Đà Lạt'
-        },
-        vehicle_type: 'sleeper',
-        price: 200000
-      },
-      user: {
-        name: 'Trần Thị B',
-        email: 'tranthib@example.com',
-        phone: '0912345678'
-      }
-    },
-    {
-      id: 'booking-3',
-      user_id: 'user-3',
-      trip_id: 'trip-3',
-      seats: [
-        { seat_number: 'C1', price: 180000 },
-        { seat_number: 'C2', price: 180000 },
-        { seat_number: 'C3', price: 180000 }
-      ],
-      total_price: 540000,
-      status: 'completed',
-      payment_status: 'paid',
-      created_at: '2023-05-10T09:15:00Z',
-      trip: {
-        id: 'trip-3',
-        trip_date: '2023-05-15T07:30:00Z',
-        route_id: 'route-3',
-        routes: {
-          origin: 'Đà Nẵng',
-          destination: 'Huế'
-        },
-        vehicle_type: 'limousine',
-        price: 180000
-      },
-      user: {
-        name: 'Lê Văn C',
-        email: 'levanc@example.com',
-        phone: '0967890123'
-      }
-    },
-    {
-      id: 'booking-4',
-      user_id: 'user-4',
-      trip_id: 'trip-4',
-      seats: [
-        { seat_number: 'D4', price: 220000 }
-      ],
-      total_price: 220000,
-      status: 'cancelled',
-      payment_status: 'refunded',
-      created_at: '2023-05-14T16:20:00Z',
-      trip: {
-        id: 'trip-4',
-        trip_date: '2023-05-19T12:00:00Z',
-        route_id: 'route-4',
-        routes: {
-          origin: 'Nha Trang',
-          destination: 'Phan Thiết'
-        },
-        vehicle_type: 'sleeper',
-        price: 220000
-      },
-      user: {
-        name: 'Phạm Thị D',
-        email: 'phamthid@example.com',
-        phone: '0934567890'
-      }
-    },
-    {
-      id: 'booking-5',
-      user_id: 'user-5',
-      trip_id: 'trip-5',
-      seats: [
-        { seat_number: 'E5', price: 170000 },
-        { seat_number: 'E6', price: 170000 }
-      ],
-      total_price: 340000,
-      status: 'confirmed',
-      payment_status: 'paid',
-      created_at: '2023-05-17T11:10:00Z',
-      trip: {
-        id: 'trip-5',
-        trip_date: '2023-05-22T09:00:00Z',
-        route_id: 'route-5',
-        routes: {
-          origin: 'Hải Phòng',
-          destination: 'Quảng Ninh'
-        },
-        vehicle_type: 'limousine',
-        price: 170000
-      },
-      user: {
-        name: 'Hoàng Văn E',
-        email: 'hoangvane@example.com',
-        phone: '0978901234'
-      }
-    }
-  ];
-
-  const [bookings, setBookings] = useState<BookingWithDetails[]>([]);
-  const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState({
-    status: '',
-    payment: '',
-    date: ''
-  });
-  const [selectedStatus, setSelectedStatus] = useState('confirmed');
-  const [statusUpdateModal, setStatusUpdateModal] = useState({
-    show: false,
-    bookingId: '',
-    currentStatus: ''
-  });
+  // State for filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [routeFilter, setRouteFilter] = useState<string>('all');
+  const [bookingsData, setBookingsData] = useState<BookingData[]>([]);
 
   useEffect(() => {
-    handleGetBookings();
+    fetchTicket();
   }, []);
-
-  const handleGetBookings = async () => {
-    // Giả lập delay gọi API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setBookings(mockBookings);
-  };
-
-  const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
-    try {
-      // Giả lập delay gọi API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setBookings(bookings.map(booking => 
-        booking.id === bookingId ? { ...booking, status: newStatus as any } : booking
-      ));
-      setStatusUpdateModal({ show: false, bookingId: '', currentStatus: '' });
-    } catch (error) {
-      console.error('Failed to update booking status:', error);
+  
+  //Fetch data
+  const fetchTicket = async () => {
+    const res = await getAllBookings();
+    if(res.success && Array.isArray(res.data)) {
+      setBookingsData(res.data);
     }
-  };
+  }
+  // Get unique routes for filter
+  const uniqueRoutes = Array.from(new Set(
+    bookingsData.map(booking => `${booking.trip.origin} → ${booking.trip.destination}`)
+  ));
 
-  const openStatusUpdateModal = (bookingId: string, currentStatus: string) => {
-    setStatusUpdateModal({
-      show: true,
-      bookingId,
-      currentStatus
-    });
-  };
-
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFilters({
-      ...filters,
-      [name]: value
-    });
-  };
-
-  const filteredBookings = bookings.filter((booking) => {
+  // Filter bookings
+  const filteredBookings = bookingsData.filter(booking => {
     const matchesSearch = 
-      booking.user.name.toLowerCase().includes(search.toLowerCase()) ||
-      booking.user.email.toLowerCase().includes(search.toLowerCase()) ||
-      booking.user.phone.toLowerCase().includes(search.toLowerCase()) ||
-      booking.trip.routes.origin.toLowerCase().includes(search.toLowerCase()) ||
-      booking.trip.routes.destination.toLowerCase().includes(search.toLowerCase());
+      booking.booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.booking.phoneNumber.includes(searchTerm) ||
+      (booking.booking.email && booking.booking.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      booking.booking.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filters.status ? booking.status === filters.status : true;
-    const matchesPayment = filters.payment ? booking.payment_status === filters.payment : true;
-    const matchesDate = filters.date ? 
-      new Date(booking.created_at).toLocaleDateString() === new Date(filters.date).toLocaleDateString() : true;
+    const matchesStatus = statusFilter === 'all' || booking.booking.status === statusFilter;
+    const matchesPayment = paymentFilter === 'all' || booking.payment.status === paymentFilter;
+    const matchesRoute = routeFilter === 'all' || 
+      `${booking.trip.origin} → ${booking.trip.destination}` === routeFilter;
     
-    return matchesSearch && matchesStatus && matchesPayment && matchesDate;
+    return matchesSearch && matchesStatus && matchesPayment && matchesRoute;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-blue-100 text-blue-800';
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  // Status badge component
+  const StatusBadge = ({ status }: { status: string }) => {
+    const config = {
+      Booked: { color: 'bg-blue-100 text-blue-800', text: 'Đã đặt' },
+      Cancelled: { color: 'bg-red-100 text-red-800', text: 'Đã hủy' },
+      default: { color: 'bg-gray-100 text-gray-800', text: status }
+    };
+    
+    const { color, text } = config[status as keyof typeof config] || config.default;
+    
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${color}`}>
+        {text}
+      </span>
+    );
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Chờ xác nhận';
-      case 'confirmed':
-        return 'Đã xác nhận';
-      case 'cancelled':
-        return 'Đã hủy';
-      case 'completed':
-        return 'Hoàn thành';
-      default:
-        return 'Không xác định';
-    }
+  // Payment badge component
+  const PaymentBadge = ({ status, method }: { status: string; method: string }) => {
+    const statusConfig = {
+      Success: { color: 'bg-green-100 text-green-800', text: 'Thành công' },
+      Pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Đang chờ' },
+      Failed: { color: 'bg-red-100 text-red-800', text: 'Thất bại' },
+      default: { color: 'bg-gray-100 text-gray-800', text: status }
+    };
+    
+    const methodConfig = {
+      vnpay: { color: 'bg-purple-100 text-purple-800', text: 'VNPay' },
+      CASH: { color: 'bg-indigo-100 text-indigo-800', text: 'Tiền mặt' },
+      default: { color: 'bg-gray-100 text-gray-800', text: method }
+    };
+    
+    const { color: statusColor, text: statusText } = 
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.default;
+    
+    const { color: methodColor, text: methodText } = 
+      methodConfig[method as keyof typeof methodConfig] || methodConfig.default;
+    
+    return (
+      <div className="flex flex-col gap-1">
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+          {statusText}
+        </span>
+        <span className={`px-2 py-0.5 rounded-full text-[0.65rem] font-medium ${methodColor}`}>
+          {methodText}
+        </span>
+      </div>
+    );
   };
 
-  const getPaymentStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'Chờ thanh toán';
-      case 'paid':
-        return 'Đã thanh toán';
-      case 'failed':
-        return 'Thanh toán thất bại';
-      case 'refunded':
-        return 'Đã hoàn tiền';
-      default:
-        return 'Không xác định';
-    }
+  // Formatted date display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return date.toLocaleString('vi-VN', options);
   };
 
-  const getPaymentStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'paid':
-        return 'bg-green-100 text-green-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      case 'refunded':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  // Formatted currency display
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      minimumFractionDigits: 0
+    }).format(amount);
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Quản lý vé đã đặt</h1>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Tìm kiếm vé đặt..."
-            className="w-64 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Filter section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo trạng thái</label>
-          <select
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Chờ xác nhận</option>
-            <option value="confirmed">Đã xác nhận</option>
-            <option value="cancelled">Đã hủy</option>
-            <option value="completed">Hoàn thành</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo thanh toán</label>
-          <select
-            name="payment"
-            value={filters.payment}
-            onChange={handleFilterChange}
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Tất cả trạng thái thanh toán</option>
-            <option value="pending">Chờ thanh toán</option>
-            <option value="paid">Đã thanh toán</option>
-            <option value="failed">Thanh toán thất bại</option>
-            <option value="refunded">Đã hoàn tiền</option>
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo ngày đặt</label>
-          <input
-            type="date"
-            name="date"
-            value={filters.date}
-            onChange={handleFilterChange}
-            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
-
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã vé</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tuyến đường</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đi</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ghế</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TT thanh toán</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredBookings.map((booking) => (
-              <tr key={booking.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  #{booking.id.slice(0, 8)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{booking.user.name}</div>
-                  <div className="text-sm text-gray-500">{booking.user.phone}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">
-                    {booking.trip.routes.origin} → {booking.trip.routes.destination}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {booking.trip.vehicle_type === 'limousine' ? 'Limousine' : 'Giường nằm'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {new Date(booking.trip.trip_date).toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {booking.seats.map(seat => seat.seat_number).join(', ')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {booking.total_price.toLocaleString()}đ
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(
-                      booking.payment_status
-                    )}`}
-                  >
-                    {getPaymentStatusText(booking.payment_status)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                      booking.status
-                    )}`}
-                  >
-                    {getStatusText(booking.status)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <button
-                    onClick={() => openStatusUpdateModal(booking.id, booking.status)}
-                    className="text-yellow-600 hover:text-yellow-900 mr-3"
-                    disabled={!['pending', 'confirmed'].includes(booking.status)}
-                  >
-                    Cập nhật
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Status Update Modal */}
-      {statusUpdateModal.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Cập nhật trạng thái vé</h2>
-              <button
-                onClick={() => setStatusUpdateModal({ show: false, bookingId: '', currentStatus: '' })}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Trạng thái hiện tại
-                </label>
-                <div className="p-2 bg-gray-100 rounded">
-                  {getStatusText(statusUpdateModal.currentStatus)}
-                </div>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Quản Lý Đặt Vé</h1>
+            <p className="text-sm text-gray-500 mt-1">Danh sách các vé đã đặt và trạng thái thanh toán</p>
+          </div>
+          <div className="mt-4 md:mt-0">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cập nhật trạng thái
-                </label>
-                <select
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  defaultValue={statusUpdateModal.currentStatus === 'pending' ? 'confirmed' : 'cancelled'}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  {statusUpdateModal.currentStatus === 'pending' && (
-                    <>
-                      <option value="confirmed">Xác nhận</option>
-                      <option value="cancelled">Hủy vé</option>
-                    </>
-                  )}
-                  {statusUpdateModal.currentStatus === 'confirmed' && (
-                    <>
-                      <option value="completed">Hoàn thành</option>
-                      <option value="cancelled">Hủy vé</option>
-                    </>
-                  )}
-                </select>
-              </div>
-
-              <button
-                onClick={() => handleUpdateStatus(statusUpdateModal.bookingId, selectedStatus)}
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors mt-4"
-              >
-                Xác nhận
-              </button>
+              <input
+                type="text"
+                placeholder="Tìm kiếm vé"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
           </div>
         </div>
-      )}
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tuyến đường</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                value={routeFilter}
+                onChange={(e) => setRouteFilter(e.target.value)}
+              >
+                <option value="all">Tất cả tuyến đường</option>
+                {uniqueRoutes.map(route => (
+                  <option key={route} value={route}>{route}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái vé</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="Booked">Đã đặt</option>
+                <option value="Cancelled">Đã hủy</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái thanh toán</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value)}
+              >
+                <option value="all">Tất cả thanh toán</option>
+                <option value="Success">Thành công</option>
+                <option value="Pending">Đang chờ</option>
+                <option value="Failed">Thất bại</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings Table */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Mã vé</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Khách hàng</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Chuyến đi</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Ghế & Giá vé</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Thanh toán</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-center">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200 text-center">
+                {filteredBookings.length > 0 ? (
+                  filteredBookings.map((booking) => (
+                    <tr key={booking.booking.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{booking.booking.id}</div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatDate(booking.booking.bookingTime)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{booking.booking.customerName}</div>
+                        <div className="text-xs text-gray-500">{booking.booking.phoneNumber}</div>
+                        {booking.booking.email && (
+                          <div className="text-xs text-gray-500 truncate max-w-xs">{booking.booking.email}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {booking.trip.origin} → {booking.trip.destination}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {formatDate(booking.trip.tripDate)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center align-middle">
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {booking.booking.seatNumbers.map(seat => (
+                              <span 
+                                key={seat} 
+                                className="px-2 py-1 bg-gray-100 rounded-md text-xs font-medium text-gray-700"
+                              >
+                                {seat}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="text-sm font-medium text-gray-900 mt-1">
+                            {formatCurrency(booking.payment.amount)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <PaymentBadge 
+                          status={booking.payment.status} 
+                          method={booking.payment.method} 
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatDate(booking.payment.paymentTime)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={booking.booking.status} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center">
+                      <svg
+                        className="mx-auto h-12 w-12 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          vectorEffect="non-scaling-stroke"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">Không tìm thấy vé nào</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Hãy thử thay đổi tiêu chí tìm kiếm hoặc bộ lọc của bạn
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="flex items-center justify-between mt-4 px-2">
+          <div className="text-sm text-gray-500">
+            Hiển thị <span className="font-medium">{filteredBookings.length}</span> trong tổng số{' '}
+            <span className="font-medium">{bookingsData.length}</span> vé
+          </div>
+          <div className="text-sm text-gray-500">
+            Cập nhật lúc {new Date().toLocaleTimeString('vi-VN')}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

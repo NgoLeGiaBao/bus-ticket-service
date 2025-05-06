@@ -295,6 +295,16 @@ export const lookupTicketByPhone = async (phoneNumber: string): Promise<any> => 
   }
 }
 
+// Get All Ticket
+export const getAllBookings = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<BookingResponse>>(`/reservations/bookings/all-tickets`);
+    return response;
+  } catch (error) {
+    throw new Error('An error occurred while fetching the booking details.');
+  }
+}
+
 // Change seat
 export const changeSeatRequestFromCustomer = async (data: ChangeSeatRequest) => {
   try {

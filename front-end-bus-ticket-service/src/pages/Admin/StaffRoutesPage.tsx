@@ -239,7 +239,7 @@ const StaffRoutesPage = () => {
       {/* Header */}
       <div className="py-6 px-4 md:px-6 xl:px-7.5 flex justify-between items-center border-b border-stroke dark:border-strokedark">
         <div className="flex items-center space-x-3">
-          <FiUsers className="text-2xl text-primary" />
+          {/* <FiUsers className="text-2xl text-primary" /> */}
           <h4 className="text-xl font-semibold text-black dark:text-white">
             Quản lý phân công nhân viên
           </h4>

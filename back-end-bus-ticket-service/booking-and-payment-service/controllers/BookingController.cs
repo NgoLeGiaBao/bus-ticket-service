@@ -94,11 +94,18 @@ namespace booking_and_payment_service.controllers
             var result = await _bookingService.LookupTicketAsync(phoneNumber, bookingId);
             return Ok(result);
         }
-        
+
         [HttpGet("lookup-phone")]
         public async Task<IActionResult> LookupTicket([FromQuery] string phoneNumber)
         {
             var result = await _bookingService.LookupTicketsByPhoneAsync(phoneNumber);
+            return Ok(result);
+        }
+        
+        [HttpGet("all-tickets")]
+        public async Task<IActionResult> GetAllTickets()
+        {
+            var result = await _bookingService.GetAllTicketsAsync();
             return Ok(result);
         }
 
