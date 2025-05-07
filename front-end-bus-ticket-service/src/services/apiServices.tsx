@@ -1,6 +1,7 @@
+import { Dispatch } from "@reduxjs/toolkit";
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams, RolesForm } from "../interfaces/Auth";
-import { RouteAssignmentPayload } from "../interfaces/Dispatch";
+import { DispatchAssignmentPayload, DispatchAssignmentStatusPayload, RouteAssignmentPayload } from "../interfaces/Dispatch";
 import { BookingRequest, BookingResponse, ChangeSeatRequest, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
@@ -368,5 +369,25 @@ export const getAllDispatchAssignments = async (): Promise<any> => {
     return response;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || 'Failed to fetch dispatch assignments');
+  }
+}
+
+// Create a dispatch assignment
+export const createDispatchAssignment = async (payload: DispatchAssignmentPayload): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<any>>('/dispatch-assignments/dispatch_assignments', payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create dispatch assignment');
+  }
+}
+
+// Update a dispatch assignment
+export const updateDispatchAssignmentStatus = async (id: string, payload: DispatchAssignmentStatusPayload): Promise<any> => {
+  try {
+    const response = await axios.put<ApiResponse<any>>(`/dispatch-assignments/dispatch_assignments/${id}/status`, payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to update dispatch assignment');
   }
 }

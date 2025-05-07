@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FiUsers, FiPlus, FiEdit, FiTrash2, FiTruck, FiChevronDown, FiChevronUp, FiCalendar } from 'react-icons/fi';
-import { getAllDispatchAssignments, getAllRoutes, getAllStaffRoutes, getAllTrips, getAllUsersWithRolesDriverAndConductor } from '../../services/apiServices';
+import { FiUsers, FiPlus, FiEdit, FiTrash2, FiTruck, FiChevronDown, FiChevronUp, FiCalendar, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { createDispatchAssignment, getAllDispatchAssignments, getAllRoutes, getAllStaffRoutes, getAllTrips, getAllUsersWithRolesDriverAndConductor, updateDispatchAssignmentStatus } from '../../services/apiServices';
+import { DispatchAssignmentPayload, DispatchAssignmentStatusPayload } from '../../interfaces/Dispatch';
 
 interface User {
   id: string;
@@ -60,28 +61,39 @@ interface StaffRoute {
   roleassignments: string[];
 }
 
+interface Notification {
+  type: 'success' | 'error';
+  message: string;
+  show: boolean;
+}
+
 const DispatchAssignmentsPage = () => {
-    // Form and filter state
   const [users, setUsers] = useState<User[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [assignments, setAssignments] = useState<DispatchAssignment[]>([]);
   const [staffRoutes, setStaffRoutes] = useState<StaffRoute[]>([]);
-  const [selectedRouteId, setSelectedRouteId] = useState<string>("");
-  const [selectedTripId, setSelectedTripId] = useState<string>("");
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('');
+  const [selectedTripId, setSelectedTripId] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [routeFilter, setRouteFilter] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [routeFilter, setRouteFilter] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [expandedTrips, setExpandedTrips] = useState<Record<string, boolean>>({});
+  const [notification, setNotification] = useState<Notification>({ type: 'success', message: '', show: false });
+
+  const nowInVietnam = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const now = new Date(nowInVietnam);
+  const oneHourLater = new Date(now.getTime() + 3600000);
+
   const [currentAssignment, setCurrentAssignment] = useState<Partial<DispatchAssignment>>({
     status: 'assigned',
-    assignedate: new Date().toISOString(),
-    expectedendtime: new Date(Date.now() + 3600000).toISOString(),
+    assignedate: '',
+    expectedendtime: '',
     role: 'driver',
   });
 
@@ -91,49 +103,47 @@ const DispatchAssignmentsPage = () => {
     fetchStaffRoutes();
     fetchTrips();
     fetchDispatchAssignments();
-  },[]);
+  }, []);
 
   const fetchUser = async () => {
     const res = await getAllUsersWithRolesDriverAndConductor();
     if (res.success && Array.isArray(res.data)) {
       setUsers(res.data);
     }
-  }
+  };
 
   const fetchRoutes = async () => {
     const res = await getAllRoutes();
-    if(res.success && Array.isArray(res.data)) {
+    if (res.success && Array.isArray(res.data)) {
       setRoutes(res.data);
     }
   };
 
   const fetchStaffRoutes = async () => {
     const res = await getAllStaffRoutes();
-    if(res.success && Array.isArray(res.data.routes)) {
+    if (res.success && Array.isArray(res.data.routes)) {
       setStaffRoutes(res.data.routes);
     }
-  }
+  };
 
   const fetchTrips = async () => {
     const res = await getAllTrips();
-    if(res.success && Array.isArray(res.data)) {
+    if (res.success && Array.isArray(res.data)) {
       setTrips(res.data);
     }
-  }
+  };
 
   const fetchDispatchAssignments = async () => {
     const res = await getAllDispatchAssignments();
-    if(res.success && Array.isArray(res.data)) {
-      setAssignments(res.data);
+    if (res.success) {
+      setAssignments(res.data.assignments);
     }
-  }
+  };
 
-  // Filter trips based on selected route for form
   const filteredTrips = selectedRouteId
     ? trips.filter((trip) => trip.route_id === selectedRouteId)
     : [];
 
-  // Filter drivers based on selected route
   const filteredDrivers = selectedRouteId
     ? users.filter((user) =>
         staffRoutes.some(
@@ -146,18 +156,14 @@ const DispatchAssignmentsPage = () => {
       )
     : [];
 
-  // Get all trips with assignments, applying filters
   const filteredTripAssignments = trips
     .filter((trip) => {
-      const tripDate = new Date(trip.trip_date).toISOString().split('T')[0];
+      const tripDate = new Date(trip.trip_date).toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }).split('T')[0];
       const hasAssignments = assignments.some((a) => a.tripid === trip.id);
 
       return (
-        // Route filter
         (!routeFilter || trip.route_id === routeFilter) &&
-        // Date filter
         (!dateFilter || tripDate === dateFilter) &&
-        // Status filter
         (statusFilter === 'all' ||
           (statusFilter === 'assigned' && hasAssignments) ||
           (statusFilter === 'unassigned' && !hasAssignments))
@@ -169,7 +175,6 @@ const DispatchAssignmentsPage = () => {
       trip,
     }));
 
-  // Toggle trip expansion
   const toggleTripExpansion = (tripId: string) => {
     setExpandedTrips((prev) => ({
       ...prev,
@@ -177,38 +182,38 @@ const DispatchAssignmentsPage = () => {
     }));
   };
 
-  // Calculate expected end time based on trip start time and route duration
   const calculateExpectedEndTime = (tripId: string, routeId: string) => {
     const trip = trips.find((t) => t.id === tripId);
     const route = routes.find((r) => r.id === routeId);
     if (trip && route) {
-      const startTime = new Date(trip.trip_date);
-      const durationHours = route.duration + 1; // Add 1 hour as per requirement
+      const startTime = new Date(new Date(trip.trip_date).toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+      const durationHours = route.duration + 1;
       const endTime = new Date(startTime.getTime() + durationHours * 60 * 60 * 1000);
       return endTime.toISOString();
     }
-    return new Date(Date.now() + 3600000).toISOString();
+    return new Date(new Date(nowInVietnam).getTime() + 3600000).toISOString();
   };
 
-  // Handle trip selection
   const handleTripChange = (tripId: string) => {
     setSelectedTripId(tripId);
     const trip = trips.find((t) => t.id === tripId);
     if (trip) {
+      const assignedDate = new Date(trip.trip_date).toISOString();
+      const expectedEndTime = calculateExpectedEndTime(tripId, trip.route_id);
       setCurrentAssignment((prev) => ({
         ...prev,
-        assignedate: trip.trip_date,
-        expectedendtime: calculateExpectedEndTime(tripId, trip.route_id),
+        assignedate: assignedDate,
+        expectedendtime: expectedEndTime,
       }));
     }
   };
 
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedUserId || !selectedTripId || !currentAssignment.role) {
       setErrorMessage('Vui lòng điền đầy đủ thông tin');
+      setNotification({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin', show: true });
       return;
     }
 
@@ -216,6 +221,7 @@ const DispatchAssignmentsPage = () => {
       new Date(currentAssignment.expectedendtime!) <= new Date(currentAssignment.assignedate!)
     ) {
       setErrorMessage('Thời gian kết thúc phải sau thời gian bắt đầu');
+      setNotification({ type: 'error', message: 'Thời gian kết thúc phải sau thời gian bắt đầu', show: true });
       return;
     }
 
@@ -229,34 +235,76 @@ const DispatchAssignmentsPage = () => {
       )
     ) {
       setErrorMessage('Nhân viên đã được phân công vai trò này cho chuyến đi này');
+      setNotification({ type: 'error', message: 'Nhân viên đã được phân công vai trò này cho chuyến đi này', show: true });
       return;
     }
 
-    if (currentAssignment.id) {
-      setAssignments(
-        assignments.map((assignment) =>
-          assignment.id === currentAssignment.id
-            ? { ...assignment, ...currentAssignment, userid: selectedUserId, tripid: selectedTripId } as DispatchAssignment
-            : assignment
-        )
-      );
+    const isUpdating = Boolean(currentAssignment.id);
+
+    if (isUpdating) {
+      const assignmentPayLoad: DispatchAssignmentStatusPayload = {
+        status: currentAssignment.status || 'assigned',
+      };
+  
+      const res = await updateDispatchAssignmentStatus(currentAssignment.id!, assignmentPayLoad);
+      if (res.success) {
+        fetchDispatchAssignments();
+        setNotification({
+          type: 'success',
+          message: 'Cập nhật phân công thành công',
+          show: true,
+        });
+        
+      }
     } else {
-      const newAssignment = {
+      const now = new Date();
+      const toISOStringPlus7 = (date: string | Date) =>
+        new Date(new Date(date).getTime() + 7 * 60 * 60 * 1000).toISOString();
+  
+      const newAssignment: DispatchAssignment = {
         ...currentAssignment,
         id: `da${Date.now()}`,
         userid: selectedUserId,
         tripid: selectedTripId,
         status: currentAssignment.status || 'assigned',
-        createdate: new Date().toISOString(),
-      } as DispatchAssignment;
-      setAssignments([...assignments, newAssignment]);
+        createdate: now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }),
+        assignedate: currentAssignment.assignedate || new Date().toISOString(),
+        expectedendtime: currentAssignment.expectedendtime || new Date().toISOString(),
+        role: currentAssignment.role || 'driver',
+      };
+  
+      setAssignments(prev => [...prev, newAssignment]);
+  
+      const assignmentPayLoad: DispatchAssignmentPayload = {
+        tripid: selectedTripId,
+        userid: selectedUserId,
+        assignedate: toISOStringPlus7(newAssignment.assignedate),
+        expectedendtime: toISOStringPlus7(newAssignment.expectedendtime),
+        role: newAssignment.role,
+        status: newAssignment.status,
+      };
+  
+      const res = await createDispatchAssignment(assignmentPayLoad);
+      if (res.success) {
+        fetchDispatchAssignments();
+        setNotification({
+          type: 'success',
+          message: 'Phân công đã được thêm thành công',
+          show: true,
+        });
+      }
     }
-
+  
+    // Close dialog
+    setTimeout(() => {
+      setNotification({ type: 'success', message: '', show: false });
+    }, 3000);
+    // Reset form
     setIsDialogOpen(false);
     setCurrentAssignment({
       status: 'assigned',
-      assignedate: new Date().toISOString(),
-      expectedendtime: new Date(Date.now() + 3600000).toISOString(),
+      assignedate: '',
+      expectedendtime: '',
       role: 'driver',
     });
     setSelectedRouteId('');
@@ -265,16 +313,32 @@ const DispatchAssignmentsPage = () => {
     setErrorMessage(null);
   };
 
-  // Handle delete
-  const handleDelete = () => {
-    if (assignmentToDelete) {
-      setAssignments(assignments.filter((a) => a.id !== assignmentToDelete));
+  const handleDelete = async () => {
+    const assignmentPayLoad: DispatchAssignmentStatusPayload = {
+      status: 'cancelled',
+    };
+    
+    const res = await updateDispatchAssignmentStatus(assignmentToDelete || '', assignmentPayLoad);
+    if (res.success) {
       setIsDeleteModalOpen(false);
       setAssignmentToDelete(null);
+      
+      fetchDispatchAssignments();
+
+      setNotification({
+        type: 'success',
+        message: 'Đã huỷ phân công thành công',
+        show: true,
+      });
+
+      setTimeout(() => {
+        setNotification({ type: 'success', message: '', show: false });
+      }, 3000); 
+
+      
     }
   };
 
-  // Status badge component
   const StatusBadge = ({ status }: { status: string }) => {
     const statusMap = {
       assigned: { text: 'Đã phân công', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
@@ -293,7 +357,6 @@ const DispatchAssignmentsPage = () => {
     );
   };
 
-  // Helper functions
   const getRouteInfo = (routeId: string) => {
     return routes.find((r) => r.id === routeId) || { origin: '', destination: '' };
   };
@@ -302,7 +365,7 @@ const DispatchAssignmentsPage = () => {
     const trip = trips.find((t) => t.id === tripId);
     return trip
       ? {
-          date: new Date(trip.trip_date).toLocaleString('vi-VN'),
+          date: new Date(trip.trip_date).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }),
           origin: trip.routes.origin,
           destination: trip.routes.destination,
           vehicleType: trip.vehicle_type,
@@ -316,6 +379,7 @@ const DispatchAssignmentsPage = () => {
 
   const formatDateTime = (dateTime: string) => {
     return new Date(dateTime).toLocaleString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -324,12 +388,14 @@ const DispatchAssignmentsPage = () => {
     });
   };
 
+  const formatToDateTimeLocal = (isoString: string) => {
+    return new Date(isoString).toLocaleString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).slice(0, 16).replace(' ', 'T');
+  };
+
   return (
     <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-      {/* Header */}
       <div className="py-6 px-4 md:px-6 xl:px-7.5 flex justify-between items-center border-b border-stroke dark:border-strokedark">
         <div className="flex items-center space-x-3">
-          {/* <FiUsers className="text-2xl text-primary" /> */}
           <h4 className="text-xl font-semibold text-black dark:text-white">Quản lý điều phối tài xế</h4>
         </div>
         <button
@@ -341,7 +407,6 @@ const DispatchAssignmentsPage = () => {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="px-4 md:px-6 2xl:px-7.5 pb-4 pt-4 space-y-4 bg-gray-50 dark:bg-meta-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="w-full md:w-48">
@@ -393,7 +458,6 @@ const DispatchAssignmentsPage = () => {
         </div>
       </div>
 
-      {/* Assignment List */}
       <div className="p-4 md:p-6 2xl:p-7.5 space-y-4">
         {filteredTripAssignments.length === 0 ? (
           <div className="py-10 text-center text-gray-500 dark:text-gray-400">
@@ -410,7 +474,6 @@ const DispatchAssignmentsPage = () => {
 
               return (
                 <div key={tripId} className="rounded-lg border border-stroke shadow-sm overflow-hidden dark:border-strokedark">
-                  {/* Trip Card Header */}
                   <div
                     className={`flex justify-between items-center p-4 cursor-pointer ${
                       isExpanded ? 'bg-gray-50 dark:bg-meta-4' : 'bg-white dark:bg-boxdark'
@@ -452,7 +515,6 @@ const DispatchAssignmentsPage = () => {
                     </div>
                   </div>
 
-                  {/* Trip Assignments (collapsible) */}
                   {isExpanded && (
                     <div className="border-t border-stroke dark:border-strokedark bg-white dark:bg-boxdark">
                       {assignments.length === 0 ? (
@@ -555,11 +617,10 @@ const DispatchAssignmentsPage = () => {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
       {isDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-boxdark rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white dark:bg-boxdark rounded-lg p-6 w-full max-w-lg mx-4">
+            <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {currentAssignment.id ? 'Chỉnh sửa điều phối' : 'Thêm điều phối mới'}
               </h3>
@@ -568,8 +629,8 @@ const DispatchAssignmentsPage = () => {
                   setIsDialogOpen(false);
                   setCurrentAssignment({
                     status: 'assigned',
-                    assignedate: new Date().toISOString(),
-                    expectedendtime: new Date(Date.now() + 3600000).toISOString(),
+                    assignedate: '',
+                    expectedendtime: '',
                     role: 'driver',
                   });
                   setSelectedRouteId('');
@@ -602,16 +663,11 @@ const DispatchAssignmentsPage = () => {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-            <div className="flex justify-center space-y-5">
-              <div className="w-full max-w-md">
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Tuyến đường
-                </label>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Tuyến đường</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 py-10 flex items-center pointer-events-none">
-                    <FiTruck className="text-gray-400 text-lg" />
-                  </div>
+                  <FiTruck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <select
                     value={selectedRouteId}
                     onChange={(e) => {
@@ -619,12 +675,10 @@ const DispatchAssignmentsPage = () => {
                       setSelectedTripId('');
                       setSelectedUserId('');
                     }}
-                    className="w-full rounded-lg border border-stroke bg-white py-3.5 pl-14 pr-4 text-base font-medium shadow-sm focus:border-primary focus:ring-2 focus:ring-primary focus:outline-none transition-colors dark:border-strokedark dark:bg-meta-4 dark:text-gray-200"
+                    className="w-full rounded-lg border border-stroke bg-white py-2 pl-10 pr-4 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
                     required
                   >
-                    <option value="" disabled>
-                      Chọn tuyến đường
-                    </option>
+                    <option value="" disabled>Chọn tuyến đường</option>
                     {routes.map((route) => (
                       <option key={route.id} value={route.id}>
                         {`${route.origin} → ${route.destination} (${route.distance}km)`}
@@ -634,145 +688,123 @@ const DispatchAssignmentsPage = () => {
                 </div>
               </div>
 
-                {selectedRouteId && (
-                  <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Chuyến đi
-                    </label>
-                    <select
-                      value={selectedTripId}
-                      onChange={(e) => handleTripChange(e.target.value)}
-                      className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      required
-                    >
-                      <option value="">Chọn chuyến đi</option>
-                      {filteredTrips.map((trip) => (
-                        <option key={trip.id} value={trip.id}>
-                          {formatDateTime(trip.trip_date)} - {trip.vehicle_type} ({trip.available_seats}{' '}
-                          chỗ trống)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {selectedRouteId && (
-                  <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Nhân viên
-                    </label>
-                    <select
-                      value={selectedUserId}
-                      onChange={(e) => setSelectedUserId(e.target.value)}
-                      className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                      required
-                    >
-                      <option value="">Chọn nhân viên</option>
-                      {filteredDrivers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.username} ({user.phoneNumber})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
+              {selectedRouteId && (
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Thời gian bắt đầu
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={
-                      currentAssignment.assignedate
-                        ? new Date(currentAssignment.assignedate).toISOString().slice(0, 16)
-                        : ''
-                    }
-                    onChange={(e) =>
-                      setCurrentAssignment((prev) => ({
-                        ...prev,
-                        assignedate: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Thời gian kết thúc
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={
-                      currentAssignment.expectedendtime
-                        ? new Date(currentAssignment.expectedendtime).toISOString().slice(0, 16)
-                        : ''
-                    }
-                    onChange={(e) =>
-                      setCurrentAssignment((prev) => ({
-                        ...prev,
-                        expectedendtime: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Vai trò
-                  </label>
+                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Chuyến đi</label>
                   <select
-                    value={currentAssignment.role || ''}
-                    onChange={(e) =>
-                      setCurrentAssignment((prev) => ({
-                        ...prev,
-                        role: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                    value={selectedTripId}
+                    onChange={(e) => handleTripChange(e.target.value)}
+                    className="w-full rounded-lg border border-stroke bg-white py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
                     required
                   >
-                    <option value="driver">Tài xế</option>
-                    <option value="conductor">Phụ xe</option>
+                    <option value="">Chọn chuyến đi</option>
+                    {filteredTrips.map((trip) => (
+                      <option key={trip.id} value={trip.id}>
+                        {formatDateTime(trip.trip_date)} - {trip.vehicle_type} ({trip.available_seats} chỗ trống)
+                      </option>
+                    ))}
                   </select>
                 </div>
+              )}
 
+              {selectedRouteId && (
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Trạng thái
-                  </label>
+                  <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Nhân viên</label>
                   <select
-                    value={currentAssignment.status || ''}
-                    onChange={(e) =>
-                      setCurrentAssignment((prev) => ({
-                        ...prev,
-                        status: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className="w-full rounded-lg border border-stroke bg-white py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
                     required
                   >
-                    <option value="assigned">Đã phân công</option>
-                    <option value="in-progress">Đang thực hiện</option>
-                    <option value="completed">Hoàn thành</option>
-                    <option value="cancelled">Đã hủy</option>
+                    <option value="">Chọn nhân viên</option>
+                    {filteredDrivers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username} ({user.phoneNumber})
+                      </option>
+                    ))}
                   </select>
                 </div>
+              )}
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian bắt đầu</label>
+                <input
+                  type="datetime-local"
+                  value={currentAssignment.assignedate ? formatToDateTimeLocal(currentAssignment.assignedate) : ''}
+                  onChange={(e) =>
+                    setCurrentAssignment((prev) => ({
+                      ...prev,
+                      assignedate: new Date(e.target.value).toISOString(),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  required
+                />
               </div>
 
-              <div className="mt-6 flex justify-end space-x-3">
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian kết thúc</label>
+                <input
+                  type="datetime-local"
+                  value={currentAssignment.expectedendtime ? formatToDateTimeLocal(currentAssignment.expectedendtime) : ''}
+                  onChange={(e) =>
+                    setCurrentAssignment((prev) => ({
+                      ...prev,
+                      expectedendtime: new Date(e.target.value).toISOString(),
+                    }))
+                  }
+                  className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Vai trò</label>
+                <select
+                  value={currentAssignment.role || ''}
+                  onChange={(e) =>
+                    setCurrentAssignment((prev) => ({
+                      ...prev,
+                      role: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-stroke bg-white py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  required
+                >
+                  <option value="driver">Tài xế</option>
+                  <option value="conductor">Phụ xe</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái</label>
+                <select
+                  value={currentAssignment.status || ''}
+                  onChange={(e) =>
+                    setCurrentAssignment((prev) => ({
+                      ...prev,
+                      status: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-stroke bg-white py-2 pl-3 pr-10 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  required
+                >
+                  <option value="assigned">Đã phân công</option>
+                  <option value="in-progress">Đang thực hiện</option>
+                  <option value="completed">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-4 mt-6">
                 <button
                   type="button"
                   onClick={() => {
                     setIsDialogOpen(false);
                     setCurrentAssignment({
                       status: 'assigned',
-                      assignedate: new Date().toISOString(),
-                      expectedendtime: new Date(Date.now() + 3600000).toISOString(),
+                      assignedate: now.toISOString(),
+                      expectedendtime: oneHourLater.toISOString(),
                       role: 'driver',
                     });
                     setSelectedRouteId('');
@@ -796,7 +828,25 @@ const DispatchAssignmentsPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {notification.show && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg transition-opacity duration-300 ${notification.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} dark:bg-opacity-80 dark:text-white`}>
+          <div className="flex items-center">
+            {notification.type === 'success' ? (
+              <FiCheckCircle className="mr-2" />
+            ) : (
+              <FiXCircle className="mr-2" />
+            )}
+            <span>{notification.message}</span>
+            <button
+              onClick={() => setNotification({ ...notification, show: false })}
+              className="ml-4 text-lg focus:outline-none"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white dark:bg-boxdark rounded-lg p-6 w-full max-w-md mx-4">

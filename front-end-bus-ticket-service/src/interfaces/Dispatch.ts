@@ -1,4 +1,5 @@
 // export type StaffRoute = {
+import { Dispatch } from '@reduxjs/toolkit';
 //     id: string;
 //     staffId: string;
 //     routeId: string;
@@ -35,4 +36,17 @@ export interface RouteAssignmentPayload {
   assigndate: string;
   isactive: boolean;
   roleassignments: string[];
+}
+
+export interface DispatchAssignmentPayload {
+  tripid: string;
+  userid: string;
+  assignedate: string; 
+  expectedendtime: string;
+  role: string;
+  status: string;
+}
+
+export interface DispatchAssignmentStatusPayload {
+  status: string;
 }
