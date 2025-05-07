@@ -130,11 +130,11 @@ const BookingTicketForm = () => {
       amount: price * selectedSeats.length,
     };
 
-    const res = await createBooking(bookingPayload);
-    if (res.success) {
+    try {
+      const res = await createBooking(bookingPayload);
       window.location.href = res.data.paymentUrl;
-    } else {
-      setMessage(res.message || 'Vé đã được bán');
+    } catch (error) {
+      setMessage('Vé đã được bán');
       openFailureModal();
     }
   };

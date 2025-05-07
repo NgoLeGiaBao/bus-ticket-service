@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FiUsers, FiPlus, FiEdit, FiTrash2, FiTruck, FiChevronDown, FiChevronUp, FiCalendar } from 'react-icons/fi';
+import { getAllDispatchAssignments, getAllRoutes, getAllStaffRoutes, getAllTrips, getAllUsersWithRolesDriverAndConductor } from '../../services/apiServices';
 
 interface User {
   id: string;
@@ -60,317 +61,12 @@ interface StaffRoute {
 }
 
 const DispatchAssignmentsPage = () => {
-  // Mock data
-  const [users] = useState<User[]>([
-    {
-      id: "1618604a-69c4-440e-9c76-f63bf6f20bac",
-      username: "Ngô Lê Gia Bảo",
-      email: "bao25092004@gmail.com",
-      phoneNumber: "0123456782",
-      roles: [{ roleId: "0196a3d2-a032-753b-856e-bb4d3e998c2a", roleName: "Driver" }],
-    },
-    {
-      id: "b9f40643-408c-40eb-a048-781fda7e7213",
-      username: "Phạm Trần Tiến",
-      email: "phamtien@gmail.com",
-      phoneNumber: "0123456788",
-      roles: [{ roleId: "0196a3d2-a032-753b-856e-bb4d3e998c2a", roleName: "Driver" }],
-    },
-    {
-      id: "de6ff5b1-cb79-4806-84e5-535764c40dd6",
-      username: "Lục Hoàng Phúc",
-      email: "lucphuc@gmail.com",
-      phoneNumber: "03966275436",
-      roles: [{ roleId: "0196a3d2-a032-753b-856e-bb4d3e998c2a", roleName: "Driver" }],
-    },
-    {
-      id: "f912e7a8-4740-418e-93cb-ab603fc3817c",
-      username: "Trần Hồng Đức",
-      email: "tranhongduc@gmail.com",
-      phoneNumber: "0123456783",
-      roles: [{ roleId: "0196a3d2-a032-753b-856e-bb4d3e998c2a", roleName: "Driver" }],
-    },
-  ]);
-
-  const [routes] = useState<Route[]>([
-    {
-      id: "b89f45c9-2bfc-4610-8f05-755e311de52d",
-      origin: "Ho Chi Minh",
-      destination: "Rach Gia",
-      distance: 235,
-      duration: 6,
-      price: 230000,
-      is_active: true,
-    },
-    {
-      id: "e0c3847e-9830-4721-941f-bf09e6817143",
-      origin: "Ho Chi Minh",
-      destination: "Sa Dec",
-      distance: 120,
-      duration: 3,
-      price: 140000,
-      is_active: true,
-    },
-    {
-      id: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-      origin: "Sa Dec",
-      destination: "Ho Chi Minh",
-      distance: 120,
-      duration: 3,
-      price: 140000,
-      is_active: true,
-    },
-    {
-      id: "06528ea4-443c-426a-9259-25b0db17ad1a",
-      origin: "Ho Chi Minh",
-      destination: "Can Tho",
-      distance: 180,
-      duration: 4,
-      price: 165000,
-      is_active: true,
-    },
-    {
-      id: "70834bf5-4b75-4cee-9d1f-0b4f0b087deb",
-      origin: "Can Tho",
-      destination: "Ho Chi Minh",
-      distance: 180,
-      duration: 4,
-      price: 165000,
-      is_active: true,
-    },
-    {
-      id: "7ce80238-ca51-49eb-8046-4890a5ce9fe0",
-      origin: "Rach Gia",
-      destination: "Ho Chi Minh",
-      distance: 235,
-      duration: 6,
-      price: 230000,
-      is_active: true,
-    },
-  ]);
-
-  const [trips] = useState<Trip[]>([
-    {
-      id: "4db1f902-4c07-4445-ba56-4c9519112475",
-      trip_date: "2025-05-08T12:30:00",
-      available_seats: 22,
-      route_id: "e0c3847e-9830-4721-941f-bf09e6817143",
-      booked_seats: ["B04", "A11", "A14", "B15", "B16", "A06", "A02", "A05", "B02", "B01", "A03", "B05"],
-      vehicle_type: "limousine",
-      price: 140000,
-      status: "scheduled",
-      routes: {
-        id: "e0c3847e-9830-4721-941f-bf09e6817143",
-        price: 140000,
-        origin: "Ho Chi Minh",
-        distance: 120,
-        duration: 3,
-        is_active: true,
-        destination: "Sa Dec",
-      },
-    },
-    {
-      id: "14715a01-5917-44c4-8a96-0c85606d1ad6",
-      trip_date: "2025-05-08T12:30:00",
-      available_seats: 29,
-      route_id: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-      booked_seats: ["B14", "B17", "A02", "A01", "A03"],
-      vehicle_type: "limousine",
-      price: 140000,
-      status: "scheduled",
-      routes: {
-        id: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-        price: 140000,
-        origin: "Sa Dec",
-        distance: 120,
-        duration: 3,
-        is_active: true,
-        destination: "Ho Chi Minh",
-      },
-    },
-    {
-      id: "5bcb4dbe-d70b-4a5c-8a47-16e564a5d028",
-      trip_date: "2025-05-08T22:00:00",
-      available_seats: 30,
-      route_id: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-      booked_seats: ["A06", "A05", "B01", "B02"],
-      vehicle_type: "limousine",
-      price: 140000,
-      status: "scheduled",
-      routes: {
-        id: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-        price: 140000,
-        origin: "Sa Dec",
-        distance: 120,
-        duration: 3,
-        is_active: true,
-        destination: "Ho Chi Minh",
-      },
-    },
-    {
-      id: "6cde12f3-4567-89ab-cdef-0123456789ab",
-      trip_date: "2025-05-09T08:00:00",
-      available_seats: 25,
-      route_id: "06528ea4-443c-426a-9259-25b0db17ad1a",
-      booked_seats: ["A01", "A02", "B01", "B02", "B03"],
-      vehicle_type: "bus",
-      price: 165000,
-      status: "scheduled",
-      routes: {
-        id: "06528ea4-443c-426a-9259-25b0db17ad1a",
-        price: 165000,
-        origin: "Ho Chi Minh",
-        distance: 180,
-        duration: 4,
-        is_active: true,
-        destination: "Can Tho",
-      },
-    },
-    {
-      id: "7def23a4-5678-9abc-def0-123456789abc",
-      trip_date: "2025-05-09T14:30:00",
-      available_seats: 28,
-      route_id: "70834bf5-4b75-4cee-9d1f-0b4f0b087deb",
-      booked_seats: ["A03", "A04", "B04", "B05"],
-      vehicle_type: "bus",
-      price: 165000,
-      status: "scheduled",
-      routes: {
-        id: "70834bf5-4b75-4cee-9d1f-0b4f0b087deb",
-        price: 165000,
-        origin: "Can Tho",
-        distance: 180,
-        duration: 4,
-        is_active: true,
-        destination: "Ho Chi Minh",
-      },
-    },
-    {
-      id: "8abc34b5-6789-0cde-f123-456789abcdef",
-      trip_date: "2025-05-09T18:00:00",
-      available_seats: 20,
-      route_id: "b89f45c9-2bfc-4610-8f05-755e311de52d",
-      booked_seats: ["A01", "A02"],
-      vehicle_type: "limousine",
-      price: 230000,
-      status: "scheduled",
-      routes: {
-        id: "b89f45c9-2bfc-4610-8f05-755e311de52d",
-        price: 230000,
-        origin: "Ho Chi Minh",
-        distance: 235,
-        duration: 6,
-        is_active: true,
-        destination: "Rach Gia",
-      },
-    },
-  ]);
-
-  const [assignments, setAssignments] = useState<DispatchAssignment[]>([
-    {
-      id: "8913dd4b-3dc0-482c-bae1-e53ba0b7eeb1",
-      userid: "1618604a-69c4-440e-9c76-f63bf6f20bac",
-      tripid: "4db1f902-4c07-4445-ba56-4c9519112475",
-      assignedate: "2025-05-08T10:00:00",
-      expectedendtime: "2025-05-08T13:30:00",
-      createdate: "2025-05-06T15:22:16.112892",
-      role: "driver",
-      status: "assigned",
-    },
-    {
-      id: "dc0f20b1-04e2-426a-91f1-61c45d6c8a50",
-      userid: "b9f40643-408c-40eb-a048-781fda7e7213",
-      tripid: "14715a01-5917-44c4-8a96-0c85606d1ad6",
-      assignedate: "2025-05-08T11:00:00",
-      expectedendtime: "2025-05-08T14:30:00",
-      createdate: "2025-05-06T15:26:55.805574",
-      role: "driver",
-      status: "in-progress",
-    },
-    {
-      id: "ef12g34h-56i7-89jk-lmno-567890pqrstu",
-      userid: "de6ff5b1-cb79-4806-84e5-535764c40dd6",
-      tripid: "5bcb4dbe-d70b-4a5c-8a47-16e564a5d028",
-      assignedate: "2025-05-08T20:30:00",
-      expectedendtime: "2025-05-08T23:30:00",
-      createdate: "2025-05-06T16:45:22.334455",
-      role: "driver",
-      status: "assigned",
-    },
-    {
-      id: "gh45i67j-89k1-23lm-nopq-678901rstuvw",
-      userid: "f912e7a8-4740-418e-93cb-ab603fc3817c",
-      tripid: "6cde12f3-4567-89ab-cdef-0123456789ab",
-      assignedate: "2025-05-09T06:30:00",
-      expectedendtime: "2025-05-09T10:30:00",
-      createdate: "2025-05-06T17:12:33.445566",
-      role: "driver",
-      status: "assigned",
-    },
-    {
-      id: "jk78l90m-12n3-45op-qrst-890123uvwxyz",
-      userid: "1618604a-69c4-440e-9c76-f63bf6f20bac",
-      tripid: "7def23a4-5678-9abc-def0-123456789abc",
-      assignedate: "2025-05-09T13:00:00",
-      expectedendtime: "2025-05-09T17:00:00",
-      createdate: "2025-05-06T18:30:44.556677",
-      role: "driver",
-      status: "assigned",
-    },
-  ]);
-
-  const [staffRoutes] = useState<StaffRoute[]>([
-    {
-      id: "95860afc-a52b-4a13-9015-943ff72319b6",
-      userid: "b9f40643-408c-40eb-a048-781fda7e7213",
-      routeid: "7ce80238-ca51-49eb-8046-4890a5ce9fe0",
-      assigndate: "2025-05-06T14:01:14.825",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-    {
-      id: "7aef5c85-0658-497c-a709-98a4fcce7925",
-      userid: "b9f40643-408c-40eb-a048-781fda7e7213",
-      routeid: "b89f45c9-2bfc-4610-8f05-755e311de52d",
-      assigndate: "2025-05-06T14:07:25.515",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-    {
-      id: "a649c2e1-aac1-476f-80a6-a334c9eb19c8",
-      userid: "1618604a-69c4-440e-9c76-f63bf6f20bac",
-      routeid: "f1f7a9c2-6976-44ee-9058-9d781431244e",
-      assigndate: "2025-05-06T14:15:54.419",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-    {
-      id: "10cf8bd7-90c8-4cd4-9f70-7ddabcd1f303",
-      userid: "f912e7a8-4740-418e-93cb-ab603fc3817c",
-      routeid: "b89f45c9-2bfc-4610-8f05-755e311de52d",
-      assigndate: "2025-05-06T14:32:44.146",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-    {
-      id: "e8f41321-f586-48a9-aeb7-c48060571b54",
-      userid: "f912e7a8-4740-418e-93cb-ab603fc3817c",
-      routeid: "7ce80238-ca51-49eb-8046-4890a5ce9fe0",
-      assigndate: "2025-05-06T14:32:51.026",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-    {
-      id: "1806bd68-9391-49e5-bac9-165205870998",
-      userid: "1618604a-69c4-440e-9c76-f63bf6f20bac",
-      routeid: "e0c3847e-9830-4721-941f-bf09e6817143",
-      assigndate: "2025-05-06T14:02:11.409",
-      isactive: true,
-      roleassignments: ["driver"],
-    },
-  ]);
-
-  // Form and filter state
+    // Form and filter state
+  const [users, setUsers] = useState<User[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [assignments, setAssignments] = useState<DispatchAssignment[]>([]);
+  const [staffRoutes, setStaffRoutes] = useState<StaffRoute[]>([]);
   const [selectedRouteId, setSelectedRouteId] = useState<string>("");
   const [selectedTripId, setSelectedTripId] = useState<string>("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
@@ -388,6 +84,49 @@ const DispatchAssignmentsPage = () => {
     expectedendtime: new Date(Date.now() + 3600000).toISOString(),
     role: 'driver',
   });
+
+  useEffect(() => {
+    fetchUser();
+    fetchRoutes();
+    fetchStaffRoutes();
+    fetchTrips();
+    fetchDispatchAssignments();
+  },[]);
+
+  const fetchUser = async () => {
+    const res = await getAllUsersWithRolesDriverAndConductor();
+    if (res.success && Array.isArray(res.data)) {
+      setUsers(res.data);
+    }
+  }
+
+  const fetchRoutes = async () => {
+    const res = await getAllRoutes();
+    if(res.success && Array.isArray(res.data)) {
+      setRoutes(res.data);
+    }
+  };
+
+  const fetchStaffRoutes = async () => {
+    const res = await getAllStaffRoutes();
+    if(res.success && Array.isArray(res.data.routes)) {
+      setStaffRoutes(res.data.routes);
+    }
+  }
+
+  const fetchTrips = async () => {
+    const res = await getAllTrips();
+    if(res.success && Array.isArray(res.data)) {
+      setTrips(res.data);
+    }
+  }
+
+  const fetchDispatchAssignments = async () => {
+    const res = await getAllDispatchAssignments();
+    if(res.success && Array.isArray(res.data)) {
+      setAssignments(res.data);
+    }
+  }
 
   // Filter trips based on selected route for form
   const filteredTrips = selectedRouteId

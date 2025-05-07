@@ -180,7 +180,7 @@ const RouteManagement: React.FC = () => {
                     origin: '',
                     destination: '',
                     distance: 0,
-                    duration: 0,
+                    duration: "0",
                     price: 0,
                     is_active: true,
                   });
@@ -244,7 +244,7 @@ const RouteManagement: React.FC = () => {
                     className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={newRoute.duration}
                     onChange={(e) =>
-                      setNewRoute({ ...newRoute, duration: Number(e.target.value) })
+                      setNewRoute({ ...newRoute, duration: e.target.value })
                     }
                   />
                 </div>

@@ -360,3 +360,13 @@ export const updateAssignUserToRoute = async (id: string, payload: RouteAssignme
     throw error;
   }
 }
+
+// Get all dispatch assignments
+export const getAllDispatchAssignments = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>('/dispatch-assignments/dispatch_assignments');
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch dispatch assignments');
+  }
+}
