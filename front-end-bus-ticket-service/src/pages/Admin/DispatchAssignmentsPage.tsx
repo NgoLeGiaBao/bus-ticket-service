@@ -212,8 +212,7 @@ const DispatchAssignmentsPage = () => {
     e.preventDefault();
 
     if (!selectedUserId || !selectedTripId || !currentAssignment.role) {
-      setErrorMessage('Vui lòng điền đầy đủ thông tin');
-      setNotification({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin', show: true });
+      // setNotification({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin', show: true });
       return;
     }
 
@@ -221,7 +220,6 @@ const DispatchAssignmentsPage = () => {
       new Date(currentAssignment.expectedendtime!) <= new Date(currentAssignment.assignedate!)
     ) {
       setErrorMessage('Thời gian kết thúc phải sau thời gian bắt đầu');
-      setNotification({ type: 'error', message: 'Thời gian kết thúc phải sau thời gian bắt đầu', show: true });
       return;
     }
 
@@ -235,8 +233,88 @@ const DispatchAssignmentsPage = () => {
       )
     ) {
       setErrorMessage('Nhân viên đã được phân công vai trò này cho chuyến đi này');
-      setNotification({ type: 'error', message: 'Nhân viên đã được phân công vai trò này cho chuyến đi này', show: true });
       return;
+    }
+
+    const currentTrip = trips.find((t) => t.id === selectedTripId);
+    if (!currentTrip || currentTrip.status === "cancelled") {
+      setErrorMessage("Chuyến đi không hợp lệ hoặc đã bị hủy");
+      return;
+    }
+
+    // Kiểm tra tất cả các chuyến đã phân công cho tài xế
+    const driverAssignments = assignments.filter((a) => a.userid === selectedUserId && a.role === currentAssignment.role && a.status !== "cancelled");
+    const currentRoute = routes.find((r) => r.id === currentTrip.route_id);
+    const startTimeCurrent = new Date(currentTrip.trip_date).getTime();
+    const endTimeCurrent = new Date(currentAssignment.expectedendtime!).getTime();
+
+    // Kiểm tra tuyến ngược và cùng chiều
+    const isReverseRoute = (route1: Route, route2: Route) =>
+      (route1.origin === route2.destination && route1.destination === route2.origin);
+
+    const isSameRoute = (route1: Route, route2: Route) =>
+      (route1.origin === route2.origin && route1.destination === route2.destination);
+
+    // Kiểm tra xung đột thời gian với tất cả các chuyến đã phân công
+    for (const assignment of driverAssignments) {
+      const previousTrip = trips.find((t) => t.id === assignment.tripid);
+      if (!previousTrip) continue;
+
+      const previousRoute = routes.find((r) => r.id === previousTrip.route_id);
+      if (!previousRoute) continue;
+
+      const startTimePrevious = new Date(previousTrip.trip_date).getTime();
+      const endTimePrevious = new Date(assignment.expectedendtime).getTime();
+
+      // Kiểm tra thời gian cơ bản: Không được trùng lặp thời gian
+      if (
+        (startTimeCurrent >= startTimePrevious && startTimeCurrent <= endTimePrevious) ||
+        (endTimeCurrent >= startTimePrevious && endTimeCurrent <= endTimePrevious) ||
+        (startTimeCurrent <= startTimePrevious && endTimeCurrent >= endTimePrevious)
+      ) {
+        setErrorMessage(`Không thể phân công: Thời gian của chuyến này (${formatDateTime(currentTrip.trip_date)} - ${formatDateTime(currentAssignment.expectedendtime!)}) xung đột với chuyến đã phân công (${formatDateTime(previousTrip.trip_date)} - ${formatDateTime(assignment.expectedendtime)})`);
+        return;
+      }
+
+      if (isSameRoute(previousRoute, currentRoute!)) {
+        const forwardDuration = previousRoute.duration + 1; // Đã cộng 1 giờ trong calculateExpectedEndTime
+        const returnRoute = routes.find((r) => r.origin === previousRoute.destination && r.destination === previousRoute.origin);
+        const returnDuration = returnRoute ? returnRoute.duration : 5; // Mặc định 5 giờ nếu không tìm thấy tuyến ngược
+        const totalMinTime = forwardDuration + returnDuration; // Tổng thời gian đi và về
+
+        const timeDiffBetweenTrips = Math.abs(startTimeCurrent - startTimePrevious) / (1000 * 60 * 60); // Đơn vị: giờ
+
+        if (timeDiffBetweenTrips <= totalMinTime) {
+          const suggestedStartTime = new Date(startTimePrevious + totalMinTime * 60 * 60 * 1000).toISOString();
+          setErrorMessage(`Không thể phân công: Tài xế cần thời gian đi từ ${previousRoute.origin} đến ${previousRoute.destination} và quay đầu về ${previousRoute.origin}. Đề xuất chuyến bắt đầu sau ${formatDateTime(suggestedStartTime)}`);
+          return;
+        }
+      }
+
+      // Kiểm tra tuyến ngược
+      if (isReverseRoute(previousRoute, currentRoute!)) {
+        const timeDiffReverse = Math.abs(startTimeCurrent - startTimePrevious) / (1000 * 60 * 60); // Đơn vị: giờ
+        const minTimeGap = 2; // Khoảng thời gian tối thiểu giữa 2 chuyến ngược tuyến (2 giờ)
+
+        if (timeDiffReverse < minTimeGap) {
+          const suggestedStartTime = new Date(startTimePrevious + minTimeGap * 60 * 60 * 1000).toISOString();
+          setErrorMessage(`Không thể phân công: Khoảng cách thời gian với chuyến ngược tuyến không đủ. Đề xuất chuyến bắt đầu sau ${formatDateTime(suggestedStartTime)}`);
+          return;
+        }
+      }
+
+      // Kiểm tra vị trí tài xế cho các chuyến không cùng tuyến và không ngược tuyến
+      const isDriverAtOrigin = previousRoute.destination === currentRoute!.origin;
+      if (!isDriverAtOrigin && !isSameRoute(previousRoute, currentRoute!) && !isReverseRoute(previousRoute, currentRoute!)) {
+        const timeDiff = (startTimeCurrent - endTimePrevious) / (1000 * 60 * 60); // Đơn vị: giờ
+        const minTimeGapForDifferentRoute = 2; // Mặc định 2 giờ
+        if (timeDiff < minTimeGapForDifferentRoute) {
+          const travelTimeBack = routes.find((r) => r.origin === previousRoute.destination && r.destination === currentRoute!.origin)?.duration || 5;
+          const suggestedStartTime = new Date(endTimePrevious + travelTimeBack * 60 * 60 * 1000).toISOString();
+          setErrorMessage(`Không thể phân công ngay: Tài xế cần quay đầu từ ${previousRoute.destination} về ${currentRoute!.origin}. Đề xuất chuyến bắt đầu sau ${formatDateTime(suggestedStartTime)}`);
+          return;
+        }
+      }
     }
 
     const isUpdating = Boolean(currentAssignment.id);
@@ -254,7 +332,6 @@ const DispatchAssignmentsPage = () => {
           message: 'Cập nhật phân công thành công',
           show: true,
         });
-        
       }
     } else {
       const now = new Date();
@@ -271,7 +348,7 @@ const DispatchAssignmentsPage = () => {
         assignedate: currentAssignment.assignedate || new Date().toISOString(),
         expectedendtime: currentAssignment.expectedendtime || new Date().toISOString(),
         role: currentAssignment.role || 'driver',
-      };
+      } as DispatchAssignment;
   
       setAssignments(prev => [...prev, newAssignment]);
   
@@ -312,7 +389,6 @@ const DispatchAssignmentsPage = () => {
     setSelectedUserId('');
     setErrorMessage(null);
   };
-
   const handleDelete = async () => {
     const assignmentPayLoad: DispatchAssignmentStatusPayload = {
       status: 'cancelled',
@@ -322,9 +398,7 @@ const DispatchAssignmentsPage = () => {
     if (res.success) {
       setIsDeleteModalOpen(false);
       setAssignmentToDelete(null);
-      
       fetchDispatchAssignments();
-
       setNotification({
         type: 'success',
         message: 'Đã huỷ phân công thành công',
@@ -334,8 +408,6 @@ const DispatchAssignmentsPage = () => {
       setTimeout(() => {
         setNotification({ type: 'success', message: '', show: false });
       }, 3000); 
-
-      
     }
   };
 
@@ -841,7 +913,7 @@ const DispatchAssignmentsPage = () => {
               onClick={() => setNotification({ ...notification, show: false })}
               className="ml-4 text-lg focus:outline-none"
             >
-              &times;
+              ×
             </button>
           </div>
         </div>
