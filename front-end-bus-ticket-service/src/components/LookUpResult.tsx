@@ -10,6 +10,7 @@ interface Ticket {
   destination: string;
   paymentStatus: string;
   ticketId: string;
+  licensePlate: string;
 }
 
 interface LookUpResultProps {
@@ -56,7 +57,6 @@ function LookUpResult({ ticket }: LookUpResultProps) {
       </div>
       <hr className="max-w-screen-sm w-full mx-auto h-0.5 bg-gray-200" />
 
-
       {/* Ticket Card */}
       <div className="mt-8 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         {/* Card Header */}
@@ -91,6 +91,7 @@ function LookUpResult({ ticket }: LookUpResultProps) {
             <div className="space-y-3">
               <InfoRow label="Tuyến xe" value={`${ticket.origin} → ${ticket.destination}`} />
               <InfoRow label="Thời gian khởi hành" value={formatDate(ticket.tripDate)} />
+              <InfoRow label="Biển số xe" value={ticket.licensePlate || 'Chưa xác định'} />
               <InfoRow label="Mã vé" value={ticket.ticketId} />
             </div>
           </div>
@@ -122,8 +123,6 @@ function LookUpResult({ ticket }: LookUpResultProps) {
           </p>
         </div>
       </div>
-
-
     </div>
   );
 }

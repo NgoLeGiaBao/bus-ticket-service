@@ -6,6 +6,7 @@ namespace booking_and_payment_service.dtos
         public string Origin { get; set; }
         public string Destination { get; set; }
         public string RouteId { get; set; }
+        public string LicensePlate { get; set; }
     }
 }
 

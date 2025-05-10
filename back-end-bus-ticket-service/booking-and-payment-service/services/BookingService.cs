@@ -365,7 +365,9 @@ namespace booking_and_payment_service.services
                     TripDate = data.GetProperty("trip_date").GetDateTime(),
                     Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
                     Destination = data.GetProperty("routes").GetProperty("destination").GetString()!,
-                    RouteId = data.GetProperty("routes").GetProperty("id").GetString()!
+                    RouteId = data.GetProperty("routes").GetProperty("id").GetString()!,
+                    LicensePlate = data.GetProperty("license_plate").GetString()!
+
                 };
             }
             catch (Exception ex)
@@ -422,7 +424,8 @@ namespace booking_and_payment_service.services
                             TripDate = data.GetProperty("trip_date").GetDateTime(),
                             Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
                             Destination = data.GetProperty("routes").GetProperty("destination").GetString()!,
-                            RouteId = data.GetProperty("routes").GetProperty("id").GetString()!
+                            RouteId = data.GetProperty("routes").GetProperty("id").GetString()!,
+                            LicensePlate = data.GetProperty("license_plate").GetString()!
                         };
                     }
                 }
@@ -475,13 +478,14 @@ namespace booking_and_payment_service.services
                     if (tripResponse?.Success == true)
                     {
                         var data = tripResponse.Data;
-
+                        Console.WriteLine(data.ToString());
                         tripDto = new TripLookupDto
                         {
                             TripDate = data.GetProperty("trip_date").GetDateTime(),
                             Origin = data.GetProperty("routes").GetProperty("origin").GetString()!,
                             Destination = data.GetProperty("routes").GetProperty("destination").GetString()!,
-                            RouteId = data.GetProperty("routes").GetProperty("id").GetString()!
+                            RouteId = data.GetProperty("routes").GetProperty("id").GetString()!,
+                            LicensePlate = data.GetProperty("license_plate").GetString()!
                         };
                     }
                 }
@@ -497,6 +501,7 @@ namespace booking_and_payment_service.services
                         booking = booking,
                         payment = payment,
                         trip = tripDto
+                        
                     });
                 }
             }

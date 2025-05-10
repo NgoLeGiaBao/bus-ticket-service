@@ -47,6 +47,7 @@ function LookUpForm() {
         destination: ticketData.trip.destination,
         paymentStatus: ticketData.payment.status,
         ticketId: ticketData.booking.id,
+        licensePlate: ticketData.trip.licensePlate,
       };
       setTicket(ticket);
     } catch (error: any) {
