@@ -32,3 +32,19 @@ CREATE TYPE trip_status_enums AS ENUM ('scheduled', 'ongoing', 'completed', 'can
 -- Thêm cột trạng thái chuyến đi vào bảng trips
 ALTER TABLE trips
 ADD COLUMN status trip_status_enums NOT NULL DEFAULT 'scheduled';
+
+CREATE TABLE SubRoutes (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(), 
+    ParentRouteId UUID NOT NULL,                 
+    RelatedRouteId UUID,                         
+    SortOrder INT,                                 
+    IsActive BOOLEAN DEFAULT TRUE,           
+    CONSTRAINT fk_parent_route
+        FOREIGN KEY (ParentRouteId)
+        REFERENCES routes(Id)
+        ON DELETE CASCADE,                         
+    CONSTRAINT fk_related_route
+        FOREIGN KEY (RelatedRouteId)
+        REFERENCES routes(Id)
+        ON DELETE SET NULL                          
+);

@@ -243,6 +243,16 @@ export const updateTripStatus = async (id: string, status: string): Promise<any>
   }
 };
 
+// Get route by ID
+export const getRouteById = async (id: string): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<Route>>(`/journeys/routes/${id}`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || "Failed to fetch route details");
+  }
+}
+
 
 
 //-- Reservation APIs --//

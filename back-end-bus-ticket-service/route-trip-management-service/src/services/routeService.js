@@ -1,22 +1,51 @@
 const supabase = require('../supabase');
 
 // Create a new route
-const createRouteService = async (origin, destination, distance, duration, price) => {
-    const { data, error } = await supabase.from('routes').insert([
-        {
-            origin,
-            destination,
-            distance,
-            duration,
-            price,
-        }
-    ]);
+const createRouteService = async (origin, destination, distance, duration, price, subroutes = []) => {
+    // Chèn vào bảng routes
+    const { data: routeData, error: routeError } = await supabase
+        .from('routes')
+        .insert([
+            {
+                origin,
+                destination,
+                distance,
+                duration,
+                price,
+                is_active: true
+            }
+        ])
+        .select('id')
+        .single();
 
-    if (error) {
-        throw new Error(error.message);
+    if (routeError) {
+        throw new Error(routeError.message);
     }
 
-    return data;
+    const newRouteId = routeData.id;
+
+    // Insert subroutes
+    if (subroutes.length > 0) {
+        const subRoutesToInsert = subroutes.map(subroute => ({
+            parentrouteid: newRouteId,
+            relatedrouteid: subroute.relatedrouteid || null,
+            sortorder: subroute.sortorder,
+            isactive: subroute.isactive ?? true
+        }));
+
+        const { data: subRouteData, error: subRouteError } = await supabase
+            .from('subroutes')
+            .insert(subRoutesToInsert)
+            .select('id');
+
+        if (subRouteError) {
+            throw new Error(subRouteError.message);
+        }
+
+        return { route: routeData, subroutes: subRouteData };
+    }
+
+    return { route: routeData, subroutes: [] };
 };
 
 // Get all destinations
@@ -106,40 +135,169 @@ const getDestinationsFromOriginService = async (origin) => {
 
 // Get all routes
 const getRoutesService = async () => {
-    const { data, error } = await supabase.from('routes').select('*');
+    const { data, error } = await supabase
+        .from('routes')
+        .select(`
+            id,
+            origin,
+            destination,
+            distance,
+            duration,
+            price,
+            is_active,
+            subroutes:subroutes!fk_parent_route (
+                id,
+                parentrouteid,
+                relatedrouteid,
+                sortorder,
+                isactive
+            )
+        `);
+
     if (error) {
-        throw new Error(error.message);
+        console.error('Error fetching routes:', error);
+        throw new Error(`Không thể tải danh sách tuyến: ${error.message}`);
     }
 
-    return data;
+    // Transform data to match the Route interface
+    const transformedData = data.map((route) => ({
+        id: route.id,
+        origin: route.origin,
+        destination: route.destination,
+        distance: route.distance,
+        duration: route.duration.toString(), // Convert duration to string
+        price: route.price,
+        is_active: route.is_active,
+        subroutes: route.subroutes.map((subroute) => ({
+            id: subroute.id,
+            relatedrouteid: subroute.relatedrouteid || '',
+            sortorder: subroute.sortorder,
+            isactive: subroute.isactive,
+        })),
+    }));
+
+    return transformedData;
 };
 
 // Get route by ID
 const getRouteByIdService = async (id) => {
-    const { data, error } = await supabase.from('routes').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+        .from('routes')
+        .select(`
+            id,
+            origin,
+            destination,
+            distance,
+            duration,
+            price,
+            is_active,
+            subroutes:subroutes!fk_parent_route (
+                id,
+                parentrouteid,
+                relatedrouteid,
+                sortorder,
+                isactive
+            )
+        `)
+        .eq('id', id)
+        .maybeSingle(); // Use maybeSingle instead of single
+
     if (error) {
-        throw new Error(error.message);
+        console.error('Error fetching route by ID:', error);
+        throw new Error(`Không thể tải tuyến: ${error.message}`);
     }
 
-    return data;
+    if (!data) {
+        throw new Error('Tuyến không tồn tại');
+    }
+
+    // Transform data to match the Route interface
+    const transformedData = {
+        id: data.id,
+        origin: data.origin,
+        destination: data.destination,
+        distance: data.distance,
+        duration: data.duration.toString(), 
+        price: data.price,
+        is_active: data.is_active,
+        subroutes: data.subroutes.map((subroute) => ({
+            id: subroute.id,
+            relatedrouteid: subroute.relatedrouteid || '',
+            sortorder: subroute.sortorder,
+            isactive: subroute.isactive,
+        })),
+    };
+
+    return transformedData;
 };
 
 // Update a route by ID
-const updateRouteService = async (id, origin, destination, distance, duration, price, is_active) => {
-    const { data, error } = await supabase.from('routes').update({
-        origin,
-        destination,
-        distance,
-        duration,
-        price,
-        is_active
-    }).eq('id', id);
+const updateRouteService = async (id, origin, destination, distance, duration, price, is_active, subroutes = []) => {
+    // Thử upsert (update hoặc insert) vào bảng routes
+    const { data: routeData, error: routeError } = await supabase
+        .from('routes')
+        .upsert([
+            {
+                id: id || undefined, // Nếu không có id, sẽ chèn mới
+                origin,
+                destination,
+                distance,
+                duration,
+                price,
+                is_active: is_active ?? true
+            }
+        ], { onConflict: 'id' })
+        .select('id')
+        .single();
 
-    if (error) {
-        throw new Error(error.message);
+    if (routeError) {
+        throw new Error(routeError.message);
     }
 
-    return data;
+    const routeId = routeData.id;
+
+    // Xóa tất cả subroutes hiện có liên quan đến route này
+    const { error: deleteError } = await supabase
+        .from('subroutes')
+        .delete()
+        .eq('parentrouteid', routeId);
+
+    if (deleteError) {
+        throw new Error(deleteError.message);
+    }
+
+    // Chèn các subroutes mới nếu có
+    let subRouteData = [];
+    if (subroutes.length > 0) {
+        const subRoutesToInsert = subroutes.map(subroute => ({
+            parentrouteid: routeId,
+            relatedrouteid: subroute.relatedrouteid || null,
+            sortorder: subroute.sortorder,
+            isactive: subroute.isactive ?? true
+        }));
+
+        const { data, error: insertError } = await supabase
+            .from('subroutes')
+            .insert(subRoutesToInsert)
+            .select('id');
+
+        if (insertError) {
+            throw new Error(insertError.message);
+        }
+        subRouteData = data;
+    }
+
+    // Lấy lại danh sách subroutes sau khi chèn
+    const { data: updatedSubroutes, error: finalError } = await supabase
+        .from('subroutes')
+        .select('id, relatedrouteid, sortorder, isactive')
+        .eq('parentrouteid', routeId);
+
+    if (finalError) {
+        throw new Error(finalError.message);
+    }
+
+    return { route: routeData, subroutes: updatedSubroutes };
 };
 
 const toggleRouteStatusService = async (id, is_active) => {

@@ -2,11 +2,11 @@ const routeService = require('../services/routeService');
 
 // Create a new route
 const createRouteController = async (req, res) => {
-    const { origin, destination, distance, duration, price } = req.body;
+    const { origin, destination, distance, duration, price, subroutes } = req.body;
 
     try {
-        const route = await routeService.createRouteService(origin, destination, distance, duration, price);
-        res.status(201).json({ success: true, message: 'Route created successfully', data: route });
+        const routeWithSubroutes = await routeService.createRouteService(origin, destination, distance, duration, price, subroutes);
+        res.status(201).json({ success: true, message: 'Route created successfully', data: routeWithSubroutes });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -104,10 +104,10 @@ const getRouteByIdController = async (req, res) => {
 // Update route by ID
 const updateRouteController = async (req, res) => {
     const { id } = req.params;
-    const { origin, destination, distance, duration, price, is_active } = req.body;
+    const { origin, destination, distance, duration, price, is_active, subroutes } = req.body;
 
     try {
-        const updatedRoute = await routeService.updateRouteService(id, origin, destination, distance, duration, price, is_active);
+        const updatedRoute = await routeService.updateRouteService(id, origin, destination, distance, duration, price, is_active, subroutes);
         res.status(200).json({ success: true, message: 'Route updated successfully', data: updatedRoute });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

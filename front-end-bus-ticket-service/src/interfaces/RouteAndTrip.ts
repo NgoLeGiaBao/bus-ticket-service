@@ -35,7 +35,15 @@ export interface RouteFormData {
   duration: string;
   price: number;
   is_active: boolean;
+  subroutes: Subroute[];
 };
+
+export interface Subroute {
+  relatedrouteid?: string;
+  sortorder: number;      
+  isactive: boolean;       
+}
+
 
 // Routes
 export interface Route {
@@ -46,6 +54,7 @@ export interface Route {
   duration: number;
   price: number;
   is_active: boolean;
+  subroutes: Subroute[];
 }
 
 export interface TripFormData {
