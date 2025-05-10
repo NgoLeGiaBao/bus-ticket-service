@@ -66,24 +66,32 @@ services:
     volumes:
       - ./keys:/root/.aspnet/DataProtection-Keys
       - /etc/localtime:/etc/localtime:ro
-
-  notification-service:
-    build: .
+  vehicle-management-service:
+    build: ./vehicle-management-service
+    container_name: vehicle-management-service
     env_file:
-      - ./notification-service/.env.prod
-    depends_on:
-      - rabbitmq
+      - ./vehicle-management-service/.env.docker
     ports:
       - "9504:9504"
+    networks:
+      - kong-network
+  # notification-service:
+  #   build: .
+  #   env_file:
+  #     - ./notification-service/.env.prod
+  #   depends_on:
+  #     - rabbitmq
+  #   ports:
+  #     - "9504:9504"
 
-  celery-worker:
-    build: .
-    command: celery -A celery_worker worker --loglevel=info
-    env_file:
-      - ./notification-service/.env.prod
-    depends_on:
-      - notification-service
-      - rabbitmq
+  # celery-worker:
+  #   build: .
+  #   command: celery -A celery_worker worker --loglevel=info
+  #   env_file:
+  #     - ./notification-service/.env.prod
+  #   depends_on:
+  #     - notification-service
+  #     - rabbitmq
 
   redis-server:
     image: redis

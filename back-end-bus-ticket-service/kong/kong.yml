@@ -77,3 +77,22 @@ services:
               exposed_headers: ["X-Custom-Header"]
               credentials: true
               max_age: 3600
+              
+  - name: vehicle-management-service
+    url: http://vehicle-management-service:9504
+    routes:
+      - name: vehicle-management-route
+        paths:
+          - /api/v1/vehicles
+        methods: [GET, POST, PUT, DELETE,OPTIONS]
+        strip_path: true
+        preserve_host: false
+        plugins:
+          - name: cors
+            config:
+              origins: ["http://localhost:5173"]
+              methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+              headers: ["Accept", "Authorization", "Content-Type"]
+              exposed_headers: ["X-Custom-Header"]
+              credentials: true
+              max_age: 3600
