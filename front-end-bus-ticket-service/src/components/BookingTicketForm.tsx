@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { createBooking, getTripById } from '../services/apiServices';
@@ -24,6 +23,12 @@ const BookingTicketForm = () => {
   const [vehicle_type, setVehicleType] = useState('');
   const [booked_seats, setBookedSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [pickupPoints, setPickupPoints] = useState<string[]>([]);
+  const [dropoffPoints, setDropoffPoints] = useState<string[]>([]);
+  const [selectedPickup, setSelectedPickup] = useState('');
+  const [selectedDropoff, setSelectedDropoff] = useState('');
 
   // User data
   const user = useSelector((state: any) => state.user.account);
@@ -58,6 +63,22 @@ const BookingTicketForm = () => {
       setRoute(res.data.routes.origin + ' - ' + res.data.routes.destination);
       setVehicleType(res.data.vehicle_type);
       setBookedSeats(res.data.booked_seats || []);
+      setOrigin(res.data.routes.origin);
+      setDestination(res.data.routes.destination);
+      
+      // Mock pickup and dropoff points - in a real app, these would come from API
+      setPickupPoints([
+        res.data.routes.origin,
+        'Trạm trung chuyển 1',
+        'Trạm trung chuyển 2'
+      ]);
+      setDropoffPoints([
+        res.data.routes.destination,
+        'Trạm trung chuyển 3',
+        'Trạm trung chuyển 4'
+      ]);
+      setSelectedPickup(res.data.routes.origin);
+      setSelectedDropoff(res.data.routes.destination);
     } catch (error) {
       console.error('Error fetching trip:', error);
     }
@@ -65,69 +86,64 @@ const BookingTicketForm = () => {
 
   // Handle seat selection
   const handleSeatSelect = (seatCode: any) => {
-	// Check if the seat is already booked or selected
     if (booked_seats.includes(seatCode)) return;
 
-	// Check if the seat is over the limit of 5 seats
-	if(selectedSeats.length >= 5 && !selectedSeats.includes(seatCode)) {
-		setMessage('Vượt quá số lượng ghế cho phép');
-		openFailureModal();
-		return;
-	}
+    if(selectedSeats.length >= 5 && !selectedSeats.includes(seatCode)) {
+      setMessage('Vượt quá số lượng ghế cho phép');
+      openFailureModal();
+      return;
+    }
 
-	// Toggle seat selection
-	setSelectedSeats(prev => {
-		// Add or remove the seat code from the selectedSeats array
-		const newSelectedSeats = prev.includes(seatCode)
-		  ? prev.filter(s => s !== seatCode)
-		  : [...prev, seatCode];
-	  
-		// Always sort the selected seats in ascending order
-		return newSelectedSeats.sort((a, b) => {
-		  const numA = parseInt(a.slice(1)); 
-		  const numB = parseInt(b.slice(1)); 
-		  return numA - numB; 
-		});
-	  });
-	  
+    setSelectedSeats(prev => {
+      const newSelectedSeats = prev.includes(seatCode)
+        ? prev.filter(s => s !== seatCode)
+        : [...prev, seatCode];
+      
+      return newSelectedSeats.sort((a, b) => {
+        const numA = parseInt(a.slice(1)); 
+        const numB = parseInt(b.slice(1)); 
+        return numA - numB; 
+      });
+    });
   };
 
   // Payment function
   const handlePayment = async () => {
-	const phoneRegex = /^[0-9]{10}$/;  
-	const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;  
-	
-	if (!fullname.trim() || !phone_number.trim() || !email.trim()) {
-	  setMessage('Vui lòng điền đầy đủ thông tin khách hàng');
-	  openFailureModal();
-	  return;
-	}
-	
-	if (!phoneRegex.test(phone_number)) {
-	  setMessage('Số điện thoại phải có 10 chữ số');
-	  openFailureModal();
-	  return;
-	}
-	
-	if (!emailRegex.test(email)) {
-	  setMessage('Email không hợp lệ');
-	  openFailureModal();
-	  return;
-	}
+    const phoneRegex = /^[0-9]{10}$/;  
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;  
+    
+    if (!fullname.trim() || !phone_number.trim() || !email.trim()) {
+      setMessage('Vui lòng điền đầy đủ thông tin khách hàng');
+      openFailureModal();
+      return;
+    }
+    
+    if (!phoneRegex.test(phone_number)) {
+      setMessage('Số điện thoại phải có 10 chữ số');
+      openFailureModal();
+      return;
+    }
+    
+    if (!emailRegex.test(email)) {
+      setMessage('Email không hợp lệ');
+      openFailureModal();
+      return;
+    }
     if (selectedSeats.length === 0) {
       setMessage('Bạn chưa chọn ghế');
       openFailureModal();
       return;
     }
 
-
-    const bookingPayload : BookingRequest = {
+    const bookingPayload: BookingRequest = {
       phoneNumber: phone_number,
       email: email,
       customerName: fullname,
       tripId: tripID?.toString() || '',
       seatNumbers: selectedSeats,
       amount: price * selectedSeats.length,
+      pickupPoint: selectedPickup,
+      dropoffPoint: selectedDropoff,
     };
 
     try {
@@ -141,70 +157,69 @@ const BookingTicketForm = () => {
 
   // Generate seat layout based on vehicle type
   const renderSeats = () => {
-	const isLimousine = vehicle_type === 'limousine';
-	const isStandard = vehicle_type === 'standard';
+    const isLimousine = vehicle_type === 'limousine';
+    const isStandard = vehicle_type === 'standard';
   
-	if (!isLimousine && !isStandard) return null;
+    if (!isLimousine && !isStandard) return null;
   
-	const seatLayout = isLimousine
-	  ? {
-		  stairs: [
-			['A01', 'A03', 'A06', 'A09', 'A12', 'A15'],
-			['', 'A04', 'A07', 'A10', 'A13', 'A16'],
-			['A02', 'A05', 'A08', 'A11', 'A14', 'A17'],
-			['B01', 'B03', 'B06', 'B09', 'B12', 'B15'],
-			['', 'B04', 'B07', 'B11', 'B13', 'B16'],
-			['B02', 'B05', 'B08', 'B10', 'B14', 'B17'],
-		  ],
-		  
-		}
-	  : {
-		stairs: [
-			['A01', 'A04', 'A07', 'A10', 'A13', 'A16'],
-			['A02', 'A05', 'A08', 'A11', 'A14', 'A17'],
-			['A03', 'A06', 'A09', 'A12', 'A15', 'A18'],
-			['B01', 'B04', 'B07', 'B10', 'B13', 'B16'],
-			['B02', 'B05', 'B08', 'B11', 'B14', 'B17'],
-			['B03', 'B06', 'B09', 'B12', 'B15', 'B18'],
-		  ],
-		};
+    const seatLayout = isLimousine
+      ? {
+          stairs: [
+            ['A01', 'A03', 'A06', 'A09', 'A12', 'A15'],
+            ['', 'A04', 'A07', 'A10', 'A13', 'A16'],
+            ['A02', 'A05', 'A08', 'A11', 'A14', 'A17'],
+            ['B01', 'B03', 'B06', 'B09', 'B12', 'B15'],
+            ['', 'B04', 'B07', 'B11', 'B13', 'B16'],
+            ['B02', 'B05', 'B08', 'B10', 'B14', 'B17'],
+          ],
+        }
+      : {
+          stairs: [
+            ['A01', 'A04', 'A07', 'A10', 'A13', 'A16'],
+            ['A02', 'A05', 'A08', 'A11', 'A14', 'A17'],
+            ['A03', 'A06', 'A09', 'A12', 'A15', 'A18'],
+            ['B01', 'B04', 'B07', 'B10', 'B13', 'B16'],
+            ['B02', 'B05', 'B08', 'B11', 'B14', 'B17'],
+            ['B03', 'B06', 'B09', 'B12', 'B15', 'B18'],
+          ],
+        };
   
-	const renderSeatGroup = (seatCodes: string[], groupIndex: number) => (
-	  <div className="flex flex-col gap-2" key={`group-${groupIndex}`}>
-		{seatCodes.map((code:string, idx:any) =>
-		  code ? (
-			<SeatItem
-			  key={code}
-			  seatCode={code}
-			  isBooked={booked_seats.includes(code)}
-			  isSelected={selectedSeats.includes(code)}
-			  onClick={handleSeatSelect}
-			/>
-		  ) : (
-			<div key={`blank-${groupIndex}-${idx}`} className="w-10 h-10" />
-		  )
-		)}
-	  </div>
-	);
+    const renderSeatGroup = (seatCodes: string[], groupIndex: number) => (
+      <div className="flex flex-col gap-2" key={`group-${groupIndex}`}>
+        {seatCodes.map((code:string, idx:any) =>
+          code ? (
+            <SeatItem
+              key={code}
+              seatCode={code}
+              isBooked={booked_seats.includes(code)}
+              isSelected={selectedSeats.includes(code)}
+              onClick={handleSeatSelect}
+            />
+          ) : (
+            <div key={`blank-${groupIndex}-${idx}`} className="w-10 h-10" />
+          )
+        )}
+      </div>
+    );
   
-	const renderFloor = (layout: string[][]) => (
-	  <section>
-		<div className="flex justify-center gap-4">
-  			<h4 className="text-lg font-medium mb-3 w-1/2 text-center">Tầng dưới</h4>
-  			<h4 className="text-lg font-medium mb-3 w-1/2 text-center">Tầng trên</h4>
-		</div>
+    const renderFloor = (layout: string[][]) => (
+      <section>
+        <div className="flex justify-center gap-4">
+            <h4 className="text-lg font-medium mb-3 w-1/2 text-center">Tầng dưới</h4>
+            <h4 className="text-lg font-medium mb-3 w-1/2 text-center">Tầng trên</h4>
+        </div>
 
-		<div className="flex gap-8">
-		  {layout.map((group, index) => renderSeatGroup(group, index))}
-		</div>
-	  </section>
-	);
+        <div className="flex gap-8">
+          {layout.map((group, index) => renderSeatGroup(group, index))}
+        </div>
+      </section>
+    );
   
-	return (
-	  <div className="flex flex-col gap-8">
-		{renderFloor(seatLayout.stairs)}
-	  </div>
-	);
+    return (
+      <div className="flex flex-col gap-8">
+        {renderFloor(seatLayout.stairs)}
+      </div>
+    );
   };
 
   // Modal functions
@@ -309,6 +324,130 @@ const BookingTicketForm = () => {
                 <span className="cursor-pointer text-red-500 underline ml-3">Chấp nhận điều khoản</span>{' '}
                 đặt vé &amp; chính sách bảo mật thông tin của FUTABusline
               </span>
+            </div>
+
+            {/* Updated Pickup/Drop-off Information Section */}
+            <div className="address-info-section bg-white border border-slate-200 p-5 mt-5">
+              <div className="flex flex-row items-center gap-x-3 mb-5">
+                <h3 className="text-xl font-semibold">Thông tin đón trả</h3>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className="w-7 h-7 text-red-500"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+                  />
+                </svg>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Pickup Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-medium mb-4 text-blue-600">ĐIỂM ĐÓN</h4>
+                  <div className="flex items-center space-x-4 mb-3">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="pickup-main"
+                        name="pickup-type"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        checked
+                        readOnly
+                      />
+                      <label htmlFor="pickup-main" className="ml-2 block text-sm font-medium text-gray-700">
+                        Điểm đón
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="pickup-transfer"
+                        name="pickup-type"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        disabled
+                      />
+                      <label htmlFor="pickup-transfer" className="ml-2 block text-sm font-medium text-gray-400">
+                        Trung chuyển
+                      </label>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <select
+                      value={selectedPickup}
+                      onChange={(e) => setSelectedPickup(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      {pickupPoints.map((point, index) => (
+                        <option key={`pickup-${index}`} value={point}>
+                          {point}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p className="mb-2">
+                      Quý khách vui lòng có mặt tại <span className="font-semibold">{selectedPickup}</span> trước{' '}
+                      <span className="font-semibold text-red-500">30 phút</span> giờ xe khởi hành để làm thủ tục lên xe.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Drop-off Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="text-lg font-medium mb-4 text-blue-600">ĐIỂM TRẢ</h4>
+                  <div className="flex items-center space-x-4 mb-3">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="dropoff-main"
+                        name="dropoff-type"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        checked
+                        readOnly
+                      />
+                      <label htmlFor="dropoff-main" className="ml-2 block text-sm font-medium text-gray-700">
+                        Điểm trả
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="dropoff-transfer"
+                        name="dropoff-type"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                        disabled
+                      />
+                      <label htmlFor="dropoff-transfer" className="ml-2 block text-sm font-medium text-gray-400">
+                        Trung chuyển
+                      </label>
+                    </div>
+                  </div>
+                  <div className="mb-4">
+                    <select
+                      value={selectedDropoff}
+                      onChange={(e) => setSelectedDropoff(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    >
+                      {dropoffPoints.map((point, index) => (
+                        <option key={`dropoff-${index}`} value={point}>
+                          {point}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>
+                      Xe sẽ dừng tại điểm cuối là <span className="font-semibold">{selectedDropoff}</span>.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
