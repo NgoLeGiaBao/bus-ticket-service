@@ -98,10 +98,21 @@ const toggleVehicleStatusController = async (req, res) => {
     }
 };
 
+// Get active vehicles
+const getActiveVehiclesController = async (req, res) => {
+    try {
+        const vehicles = await vehicleService.getActiveVehiclesService();
+        res.status(200).json(new ApiResponse(true, 'Active vehicles retrieved successfully', vehicles));
+    } catch (error) {
+        res.status(500).json(new ApiResponse(false, error.message, null, error.message));
+    }
+};
+
 module.exports = {
     createVehicleController,
     getVehiclesController,
     getVehicleByIdController,
     updateVehicleController,
-    toggleVehicleStatusController
+    toggleVehicleStatusController,
+    getActiveVehiclesController
 };

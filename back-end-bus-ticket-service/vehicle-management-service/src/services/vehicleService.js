@@ -117,10 +117,26 @@ const toggleVehicleStatusService = async (id, status) => {
     return data;
 };
 
+// Get active vehicles
+const getActiveVehiclesService = async () => {
+    const { data, error } = await supabase
+        .from('vehicle')
+        .select('*')
+        .eq('status', 'Active');
+
+    if (error) {
+        throw new Error(`Failed to retrieve active vehicles: ${error.message}`);
+    }
+
+    return data;
+};
+
+
 module.exports = {
     createVehicleService,
     getVehiclesService,
     getVehicleByIdService,
     updateVehicleService,
-    toggleVehicleStatusService
+    toggleVehicleStatusService,
+    getActiveVehiclesService
 };

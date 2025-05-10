@@ -10,6 +10,9 @@ router.post('/vehicles', verifyToken, verifyRole('Admin'), vehicleController.cre
 // Get all vehicles
 router.get('/vehicles', verifyToken, vehicleController.getVehiclesController);
 
+// Get active vehicles
+router.get('/vehicles/active', verifyToken, vehicleController.getActiveVehiclesController);
+
 // Get a vehicle by ID
 router.get('/vehicles/:id', verifyToken, vehicleController.getVehicleByIdController);
 
