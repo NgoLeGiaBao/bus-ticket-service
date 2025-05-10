@@ -452,6 +452,79 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   );
                 }}
               </SidebarLinkGroup> 
+              {/* Vehicle Management */}
+              <SidebarLinkGroup
+                activeCondition={pathname.startsWith('/admin/vehicle')}
+              >
+                {(handleClick, open) => {
+                  return (
+                    <React.Fragment>
+                      <NavLink
+                        to="#"
+                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-white duration-300 ease-in-out hover:bg-[#2a4d65] ${
+                          pathname.startsWith('/admin/vehicle') && 'bg-[#2a4d65]'
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!sidebarExpanded) {
+                            setSidebarExpanded(true);
+                          }
+                          handleClick();
+                        }}
+                      >
+                      <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M7.99993 16C8.55221 16 8.99993 15.5523 8.99993 15C8.99993 14.4477 8.55221 14 7.99993 14C7.44764 14 6.99993 14.4477 6.99993 15C6.99993 15.5523 7.44764 16 7.99993 16Z" fill="#212121"></path> <path d="M16.9997 15C16.9997 15.5523 16.552 16 15.9997 16C15.4474 16 14.9997 15.5523 14.9997 15C14.9997 14.4477 15.4474 14 15.9997 14C16.552 14 16.9997 14.4477 16.9997 15Z" fill="#212121"></path> <path d="M10.7499 5C10.3357 5 9.99993 5.33579 9.99993 5.75C9.99993 6.16421 10.3357 6.5 10.7499 6.5H13.2499C13.6641 6.5 13.9999 6.16421 13.9999 5.75C13.9999 5.33579 13.6641 5 13.2499 5H10.7499Z" fill="#212121"></path> <path d="M7.74993 2C5.67886 2 3.99993 3.67893 3.99993 5.75V9.5H2.74976C2.33554 9.5 1.99976 9.83579 1.99976 10.25C1.99976 10.6642 2.33554 11 2.74976 11H3.99993V19.75C3.99993 20.7165 4.78343 21.5 5.74993 21.5H7.24993C8.21643 21.5 8.99993 20.7165 8.99993 19.75V18.5H14.9999V19.75C14.9999 20.7165 15.7834 21.5 16.7499 21.5H18.2499C19.2164 21.5 19.9999 20.7165 19.9999 19.75V11H21.2272C21.6414 11 21.9772 10.6642 21.9772 10.25C21.9772 9.83579 21.6414 9.5 21.2272 9.5H19.9999V5.75C19.9999 3.67893 18.321 2 16.2499 2H7.74993ZM18.4999 18.5V19.75C18.4999 19.8881 18.388 20 18.2499 20H16.7499C16.6119 20 16.4999 19.8881 16.4999 19.75V18.5H18.4999ZM18.4999 17H5.49993V13H18.4999V17ZM5.49993 19.75V18.5H7.49993V19.75C7.49993 19.8881 7.388 20 7.24993 20H5.74993C5.61186 20 5.49993 19.8881 5.49993 19.75ZM5.49993 5.75C5.49993 4.50736 6.50729 3.5 7.74993 3.5H16.2499C17.4926 3.5 18.4999 4.50736 18.4999 5.75V11.5H5.49993V5.75Z" fill="#ffffff"></path> </g></svg>                        
+                        Quản lý phương tiện
+                        <svg
+                          className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
+                            open && 'rotate-180'
+                          }`}
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                            d="M4.41107 6.9107C4.73651 6.58527 5.26414 6.58527 5.58958 6.9107L10.0003 11.3214L14.4111 6.91071C14.7365 6.58527 15.2641 6.58527 15.5896 6.91071C15.915 7.23614 15.915 7.76378 15.5896 8.08922L10.5896 13.0892C10.2641 13.4147 9.73651 13.4147 9.41107 13.0892L4.41107 8.08922C4.08563 7.76378 4.08563 7.23614 4.41107 6.9107Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </NavLink>
+                      {/* Dropdown Menu */}
+                      <div className={`translate transform overflow-hidden ${!open ? 'hidden' : ''}`}>
+                        <ul className="mt-4 mb-5.5 flex flex-col gap-2.5 pl-6">
+                          {/* <li>
+                            <NavLink
+                              to="/admin/user/manage-role"
+                              className={({ isActive }) =>
+                                `group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-[#a8c7d8] duration-300 ease-in-out hover:text-white ${
+                                  isActive ? '!text-white font-semibold' : ''
+                                }`
+                              }
+                            >
+                              Quản lý vai trò
+                            </NavLink>
+                          </li> */}
+                          <li>
+                            <NavLink
+                              to="/admin/vehicle/manage-vehicle"
+                              className={({ isActive }) =>
+                                `group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-[#a8c7d8] duration-300 ease-in-out hover:text-white ${
+                                  isActive ? '!text-white font-semibold' : ''
+                                }`
+                              }
+                            >
+                              Danh sách xe
+                            </NavLink>
+                          </li>
+                        </ul>
+                      </div>
+                    </React.Fragment>
+                  );
+                }}
+              </SidebarLinkGroup> 
             </ul>
           </div>
         </nav>

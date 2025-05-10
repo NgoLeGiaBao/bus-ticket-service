@@ -27,6 +27,7 @@ import DispatchAssignmentsPage from './pages/Admin/DispatchAssignmentsPage';
 import StaffUnavailabilityPage from './pages/Admin/StaffUnavailabilityPage';
 import Dashboard from './pages/Admin/DashBoard';
 import BookingManagement from './pages/Admin/BookingManagement';
+import VehicleManagement from './pages/Admin/VehicleManagement';
 
 // Public Layout
 const PublicLayout = () => (
@@ -187,6 +188,12 @@ function App() {
           <>
             <PageTitle title="Quản lý người dùng"/>
             <UserManagement />
+          </>
+        }/>
+        <Route path='/admin/vehicle/manage-vehicle' element ={
+          <>
+            <PageTitle title="Quản lý phương tiện"/>
+            <VehicleManagement />
           </>
         }/>
       </Route>

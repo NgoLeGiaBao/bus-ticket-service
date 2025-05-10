@@ -401,3 +401,54 @@ export const updateDispatchAssignmentStatus = async (id: string, payload: Dispat
     throw new Error(error?.response?.data?.message || 'Failed to update dispatch assignment');
   }
 }
+
+//-- Vehicle APIs --//
+// Get all vehicles
+export const getAllVehicles = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>('/vehicles/vehicles');
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch vehicles');
+  }
+}
+
+// Get vehicle by ID
+export const getVehicleById = async (id: string): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>(`/vehicles/vehicles/${id}`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch vehicle details');
+  }
+}
+
+// Create a vehicle
+export const createVehicle = async (payload: VehicleFormData): Promise<any> => {
+  try {
+    const response = await axios.post<ApiResponse<any>>('/vehicles/vehicles', payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to create vehicle');
+  }
+}
+
+// Update a vehicle
+export const updateVehicle = async (id: string, payload: VehicleFormData): Promise<any> => {
+  try {
+    const response = await axios.put<ApiResponse<any>>(`/vehicles/vehicles/${id}`, payload);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to update vehicle');
+  }
+}
+
+// Toggle vehicle status
+export const toggleVehicleStatus = async (id: string): Promise<any> => {
+  try {
+    const response = await axios.put<ApiResponse<any>>(`/vehicles/vehicles/${id}/status`);
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to toggle vehicle status');
+  }
+}
