@@ -28,6 +28,7 @@ import StaffUnavailabilityPage from './pages/Admin/StaffUnavailabilityPage';
 import Dashboard from './pages/Admin/DashBoard';
 import BookingManagement from './pages/Admin/BookingManagement';
 import VehicleManagement from './pages/Admin/VehicleManagement';
+import VehicleDispatchPage from './pages/Admin/VehicleDispatchPage';
 
 // Public Layout
 const PublicLayout = () => (
@@ -178,6 +179,12 @@ function App() {
             <StaffUnavailabilityPage />
           </>
         }/>
+        <Route path='/admin/dispatch/assign-vehicle' element ={
+          <>
+            <PageTitle title="Phân công điều phối"/>
+            <VehicleDispatchPage />
+          </>
+        }/>
         <Route path='/admin/user/assgin-role' element ={
           <>
             <PageTitle title="Quản lý vai trò"/>
@@ -196,6 +203,7 @@ function App() {
             <VehicleManagement />
           </>
         }/>
+        
       </Route>
       
       {/* 404 */}

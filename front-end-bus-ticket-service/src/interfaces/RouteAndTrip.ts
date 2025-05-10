@@ -25,6 +25,8 @@ export interface Trip {
   route_id: string;
   booked_seats: string[];
   vehicle_type: string;
+  vehicle_id?: string;
+  license_plate?: string;
   routes: TripRoute;
 }
 

@@ -65,6 +65,18 @@ exports.updateTripController = async (req, res) => {
     }
 };
 
+// Update trip status
+exports.updateVehicleForTripController = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {license_plate, vehicle_id} = req.body;
+        const trip = await tripService.updateVehicleForTripService(id, {license_plate, vehicle_id});
+        res.status(200).json({ success: true, data: trip });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
 // Delete a trip by ID
 exports.deleteTripController = async (req, res) => {
     try {

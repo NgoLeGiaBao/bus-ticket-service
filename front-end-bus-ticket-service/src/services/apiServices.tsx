@@ -1,10 +1,10 @@
-import { Dispatch } from "@reduxjs/toolkit";
 import { ApiResponse } from "../interfaces/ApiResponse";
 import { AuthResponse, LoginParams, RegisterParams, RolesForm } from "../interfaces/Auth";
 import { DispatchAssignmentPayload, DispatchAssignmentStatusPayload, RouteAssignmentPayload } from "../interfaces/Dispatch";
 import { BookingRequest, BookingResponse, ChangeSeatRequest, LookUpResponse } from "../interfaces/Reservation";
 import { AvailableTripResponse, DestinationResponse, ProvinceResponse, Route, RouteFormData, TripFormData } from "../interfaces/RouteAndTrip";
 import axios from "../utils/axiosCustomize"
+import { VehicleFormData } from "../interfaces/Vehicles";
 
 //-- Identity APIs --//
 // Login function
@@ -253,6 +253,17 @@ export const getRouteById = async (id: string): Promise<any> => {
   }
 }
 
+// Assgin vehicle for trip
+export const assignVehicleForTrip = async (tripId: string, vehicleId: string, licensePlate: string): Promise<any> => {
+  console.log(tripId, vehicleId, licensePlate);
+  try {
+    const response = await axios.put(`/journeys/trips/${tripId}/vehicle`, { vehicle_id: vehicleId, license_plate: licensePlate });
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Không thể cập nhật tuyến');
+  }
+}
+
 
 
 //-- Reservation APIs --//
@@ -420,6 +431,16 @@ export const getVehicleById = async (id: string): Promise<any> => {
     return response;
   } catch (error: any) {
     throw new Error(error?.response?.data?.message || 'Failed to fetch vehicle details');
+  }
+}
+
+// Get all active vehicles
+export const getAllActiveVehicles = async (): Promise<any> => {
+  try {
+    const response = await axios.get<ApiResponse<any>>('/vehicles/vehicles/active');
+    return response;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.message || 'Failed to fetch active vehicles');
   }
 }
 

@@ -361,6 +361,18 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               Phân công điều phối
                             </NavLink>
                           </li>
+                          <li>
+                            <NavLink
+                              to="/admin/dispatch/assign-vehicle"
+                              className={({ isActive }) =>
+                                `group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-[#a8c7d8] duration-300 ease-in-out hover:text-white ${
+                                  isActive ? '!text-white font-semibold' : ''
+                                }`
+                              }
+                            >
+                              Điều xe cho chuyến đi
+                            </NavLink>
+                          </li>
                           {/* <li>
                             <NavLink
                               to="/admin/dispatch/staff-schedule"

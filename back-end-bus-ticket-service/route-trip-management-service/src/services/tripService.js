@@ -175,6 +175,20 @@ const updateTripService = async (id, updates) => {
     return data;
 };
 
+// Update vehicel for a trip
+const updateVehicleForTripService = async (id, { license_plate, vehicle_id }) => {
+    const { data, error } = await supabase
+        .from('trips')
+        .update({ license_plate, vehicle_id })
+        .eq('id', id);
+
+    if (error) {
+        throw new Error(error.message);
+    }
+
+    return data;
+};
+
 // Delete a trip by ID
 const deleteTripService = async (id) => {
     const { data, error } = await supabase.from('trips').delete().eq('id', id);
@@ -303,5 +317,6 @@ module.exports = {
     isSameRoute,
     getAvailableTripsService,
     getTripsByRouteIdService,
-    updateTripStatusService
+    updateTripStatusService,
+    updateVehicleForTripService
 };

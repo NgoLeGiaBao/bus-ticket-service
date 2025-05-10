@@ -1,35 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { FiTruck, FiPlus, FiEdit, FiSearch, FiX } from 'react-icons/fi';
 import { createVehicle, getAllVehicles, updateVehicle } from '../../services/apiServices';
+import { Vehicle, VehicleFormData } from '../../interfaces/Vehicles';
 
-interface Vehicle {
-  id: string;
-  licenseplate: string;
-  vehiclelabel: string;
-  vehicletype: 'Limousine' | 'Standard';
-  brand: string;
-  status: 'Active' | 'Inactive' | 'Maintenance' | 'Broken';
-  capacity: number;
-  registrationdate: string;
-  registrationexpirydate: string;
-  yearofmanufacture: number;
-  lastmaintenance: string;
-  nextmaintenancedue: string;
-}
+// interface Vehicle {
+//   id: string;
+//   licenseplate: string;
+//   vehiclelabel: string;
+//   vehicletype: 'Limousine' | 'Standard';
+//   brand: string;
+//   status: 'Active' | 'Inactive' | 'Maintenance' | 'Broken';
+//   capacity: number;
+//   registrationdate: string;
+//   registrationexpirydate: string;
+//   yearofmanufacture: number;
+//   lastmaintenance: string;
+//   nextmaintenancedue: string;
+// }
 
-interface VehicleFormData {
-  licenseplate: string;
-  vehiclelabel: string;
-  vehicletype: 'Limousine' | 'Standard' | '';
-  brand: string;
-  status: 'Active' | 'Inactive' | 'Maintenance' | 'Broken';
-  capacity: number;
-  registrationdate: string;
-  registrationexpirydate: string;
-  yearofmanufacture: number;
-  lastmaintenance: string;
-  nextmaintenancedue: string;
-}
+// interface VehicleFormData {
+//   licenseplate: string;
+//   vehiclelabel: string;
+//   vehicletype: 'Limousine' | 'Standard' | '';
+//   brand: string;
+//   status: 'Active' | 'Inactive' | 'Maintenance' | 'Broken';
+//   capacity: number;
+//   registrationdate: string;
+//   registrationexpirydate: string;
+//   yearofmanufacture: number;
+//   lastmaintenance: string;
+//   nextmaintenancedue: string;
+// }
 
 const VehicleManagement: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);

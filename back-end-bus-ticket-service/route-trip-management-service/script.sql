@@ -48,3 +48,11 @@ CREATE TABLE SubRoutes (
         REFERENCES routes(Id)
         ON DELETE SET NULL                          
 );
+
+-- Thêm cột biển số xe, cho phép NULL
+ALTER TABLE trips
+ADD COLUMN license_plate VARCHAR;
+
+-- Thêm cột vehicle_id kiểu UUID, cho phép NULL
+ALTER TABLE trips
+ADD COLUMN vehicle_id UUID;

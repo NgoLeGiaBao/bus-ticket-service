@@ -32,5 +32,6 @@ router.get('/trips/route/:routeId', TripController.getTripsByRouteIdController);
 // Update trip status (Admin only)
 router.put('/trips/:id/status', verifyToken, verifyRole('Admin'), TripController.updateTripStatusController);
 
-
+// Update vehicle for a trip (Admin only)
+router.put('/trips/:id/vehicle', verifyToken, verifyRole('Admin'), TripController.updateVehicleForTripController);
 module.exports = router;

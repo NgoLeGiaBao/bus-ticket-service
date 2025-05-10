@@ -1,4 +1,4 @@
-interface Vehicle {
+export interface Vehicle {
   id: string;
   licenseplate: string;
   vehiclelabel: string;
@@ -13,7 +13,7 @@ interface Vehicle {
   nextmaintenancedue: string;
 }
 
-interface VehicleFormData {
+export interface VehicleFormData {
   licenseplate: string;
   vehiclelabel: string;
   vehicletype: string;
