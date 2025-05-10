@@ -31,88 +31,126 @@ const getTripsService = async () => {
 
 // Get all trips available based on route id
 const getAvailableTripsService = async (origin, destination, tripDate) => {
-    try {
-        // Validate required parameters
-        if (!origin || !destination || !tripDate) {
-            return {
-                success: false,
-                message: 'Missing required parameters: origin, destination, tripDate',
-                data: null,
-                error: 'Bad Request'
-            };
-        }
-
-        // Get current date and time in UTC+7 (Vietnam timezone)
-        const currentDate = new Date();
-        const vietnamOffset = 7 * 60; // 7 hours in minutes
-        const vietnamTime = new Date(currentDate.getTime() + vietnamOffset * 60000); // Adjust to Vietnam time
-        const currentDateString = vietnamTime.toISOString().split('T')[0];
-        const isToday = tripDate === currentDateString;
-
-        // Prevent querying trips in the past
-        if (tripDate < currentDateString) {
-            return {
-                success: false,
-                message: 'Cannot fetch trips before today.',
-                data: null,
-                error: 'Bad Request'
-            };
-        }
-
-        // Query matching routes
-        const { data: routes, error: routeError } = await supabase
-            .from('routes')
-            .select('*')
-            .eq('origin', origin)
-            .eq('destination', destination);
-        
-        if (routeError) throw new Error(routeError.message);
-
-        if (!routes || routes.length === 0) {
-            return {
-                success: true,
-                message: 'No matching routes found.',
-                data: [],
-                error: null
-            };
-        }
-
-        // Extract route IDs
-        const routeIds = routes.map(route => route.id);
-
-        // Build trip query with trip_date filter
-        let tripQuery = supabase
-            .from('trips')
-            .select('*, routes(*)')
-            .in('route_id', routeIds)
-            .gte('trip_date', `${tripDate}T00:00:00`) 
-            .lt('trip_date', `${tripDate}T23:59:59`);
-
-        // If searching for today’s trips, exclude those within the next hour
-        if (isToday) {
-            // Get current time in Vietnam timezone and add one hour
-            vietnamTime.setHours(vietnamTime.getHours() + 1); 
-            tripQuery = tripQuery.gte('trip_date', vietnamTime.toISOString()); 
-        }
-
-        const { data: trips, error: tripError } = await tripQuery;
-
-        if (tripError) throw new Error(tripError.message);
-
-        return {
-            success: true,
-            message: 'Available trips fetched successfully.',
-            data: trips,
-            error: null
-        };
-    } catch (err) {
-        return {
-            success: false,
-            message: 'Failed to fetch available trips.',
-            data: null,
-            error: err.message
-        };
+  try {
+    // Validate required parameters
+    if (!origin || !destination || !tripDate) {
+      return {
+        success: false,
+        message: 'Missing required parameters: origin, destination, tripDate',
+        data: null,
+        error: 'Bad Request',
+      };
     }
+
+    // Get current date and time in UTC
+    const currentDate = new Date();
+    const vietnamOffset = 7 * 60; // 7 hours in minutes
+    const vietnamTime = new Date(currentDate.getTime() + vietnamOffset * 60000); 
+    const currentDateString = vietnamTime.toISOString().split('T')[0];
+    const isToday = tripDate === currentDateString;
+
+    // Prevent querying trips in the past
+    if (tripDate < currentDateString) {
+      return {
+        success: false,
+        message: 'Cannot fetch trips before today.',
+        data: null,
+        error: 'Bad Request',
+      };
+    }
+
+
+    // Step 1: Find the current route's ID
+    const { data: currentRoute, error: currentRouteError } = await supabase
+      .from('routes')
+      .select('id')
+      .eq('origin', origin)
+      .eq('destination', destination)
+      .single();
+
+
+    if (currentRouteError || !currentRoute) {
+      throw new Error(`Không thể tìm tuyến hiện tại: ${currentRouteError?.message || 'Route not found'}`);
+    }
+
+    const currentRouteId = currentRoute.id;
+
+    // Step 2: Find subroutes where the current route is a relatedrouteid
+    const { data: subRoutes, error: subRouteError } = await supabase
+      .from('subroutes')
+      .select('parentrouteid')
+      .eq('relatedrouteid', currentRouteId)
+      .eq('isactive', true);
+
+
+    // Step 3: Get parent routes (without subroutes)
+    const parentRouteIds = subRoutes.map((subRoute) => subRoute.parentrouteid);
+    const { data: routes, error: routeError } = await supabase
+      .from('routes')
+      .select('id, origin, destination, distance, duration, price, is_active')
+      .in('id', parentRouteIds)
+      .eq('is_active', true);
+
+    if (routeError) {
+      throw new Error(`Không thể tải tuyến cha: ${routeError.message}`);
+    }
+
+    // Step 4: Collect parent route IDs
+    const routeIds = routes.map((route) => route.id);
+    if (!routeIds.includes(currentRoute.id)) {
+      routeIds.push(currentRoute.id);
+    }
+
+    // Step 5: Fetch trips for parent routes
+    let tripQuery = supabase
+      .from('trips')
+      .select(
+        `
+        *,
+        routes (
+          id,
+          origin,
+          destination,
+          distance,
+          duration,
+          price,
+          is_active
+        )
+      `
+      )
+      .in('route_id', routeIds)
+      .gte('trip_date', `${tripDate}T00:00:00`)
+      .lt('trip_date', `${tripDate}T23:59:59`)
+      .in('status', ['scheduled', 'ongoing']);
+
+    // If searching for today’s trips, exclude those within the next hour
+    if (isToday) {
+      const oneHourLater = new Date(currentDate.getTime() + 60 * 60 * 1000); // Add 1 hour
+      tripQuery = tripQuery.gte('trip_date', oneHourLater.toISOString());
+    }
+
+    const { data: trips, error: tripError } = await tripQuery;
+
+    if (tripError) {
+      throw new Error(`Không thể tải chuyến: ${tripError.message}`);
+    }
+
+
+    return {
+      success: true,
+      message: 'Available trips for parent routes fetched successfully.',
+      data: trips || [],
+      error: null,
+    };
+  } catch (err) {
+    console.error('Error in getAvailableTripsService:', err.message); // Log error
+    return {
+      success: false,
+      message: 'Failed to fetch available trips for parent routes.',
+      data: null,
+      error: err.message,
+    };
+  }
 };
 
 // Get a specific trip by ID
