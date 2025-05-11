@@ -104,30 +104,41 @@ const BookingTicketForm = () => {
       let pickupPoints: string[] = [];
       let dropoffPoints: string[] = [];
 
-      // Xử lý subroute đảo ngược (từ gần đích về điểm đầu)
+      // Process subroutes
       for (const subroute of [...subroutes].reverse()) {
         const subDuration = parseInt(subroute.duration);
-        const timeDe = parentDuration - subDuration;
-      
+        let timeDe = parentDuration - subDuration;
+        if (subroute.destination !== selectedRoute.destination) {
+          const findCommonSubroute = subroutes.find(
+            sub => sub.destination === selectedRoute.destination && sub.origin === subroute.origin
+          );
+        
+          if (findCommonSubroute) {
+            const timeRoute = parseInt(findCommonSubroute.duration) - subDuration;
+            timeDe = parentDuration - subDuration - timeRoute;
+          } else {
+            timeDe = 0
+          }
+        } 
         const departureTime = parentDepartureTime.add(timeDe, 'hour');
         const arrivalTime = departureTime.add(subDuration, 'hour');
-      
+
         pickupPoints.unshift(`${subroute.origin} - ${departureTime.format('HH:mm')}`);
         dropoffPoints.unshift(`${subroute.destination} - ${arrivalTime.format('HH:mm')}`);
       }
 
-      // Thêm tuyến chính
+      // Add parent route
       pickupPoints.push(`${selectedRoute.origin} - ${parentDepartureTime.format('HH:mm')}`);
       dropoffPoints.push(`${selectedRoute.destination} - ${parentArrivalTime.format('HH:mm')}`);
 
-      // Loại bỏ trùng lặp
+      // Remove duplicates
       pickupPoints = [...new Set(pickupPoints)];
       dropoffPoints = [...new Set(dropoffPoints)];
 
       setPickupPoints(pickupPoints);
       setDropoffPoints(dropoffPoints);
 
-      // Mặc định chọn tuyến chính
+      // Default selected pickup and drop-off points
       setSelectedPickup(`${selectedRoute.origin} - ${parentDepartureTime.format('HH:mm')}`);
       setSelectedDropoff(`${selectedRoute.destination} - ${parentArrivalTime.format('HH:mm')}`);
       } catch (error) {
