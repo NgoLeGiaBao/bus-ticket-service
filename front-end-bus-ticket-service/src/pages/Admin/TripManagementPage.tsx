@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiMapPin, FiPlus, FiX } from 'react-icons/fi';
-import { createTrip, getAllRoutes, getAllTrips, updateTripStatus, mergeTrips, consolidateTrip } from '../../services/apiServices';
+import { createTrip, getAllRoutes, getAllTrips, updateTripStatus, consolidateTrip } from '../../services/apiServices';
 import { RouteFormData, Trip, TripFormData } from '../../interfaces/RouteAndTrip';
 
 const TripManagement: React.FC = () => {
@@ -61,11 +61,10 @@ const TripManagement: React.FC = () => {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!newTrip.routeId) newErrors.route_id = 'Vui lòng chọn tuyến đường';
-    if (!newTrip.tripDate) newErrors.trip_date = 'Vui lòng chọn thời gian đi';
+    if (!newTrip.route_id) newErrors.route_id = 'Vui lòng chọn tuyến đường';
+    if (!newTrip.trip_date) newErrors.trip_date = 'Vui lòng chọn thời gian đi';
     if (!newTrip.vehicle_type) newErrors.vehicle_type = 'Vui lòng chọn loại xe';
     if (newTrip.price <= 0) newErrors.price = 'Giá phải lớn hơn 0';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -79,9 +78,9 @@ const TripManagement: React.FC = () => {
     try {
       const tripData: TripFormData = {
         id: '',
-        tripDate: newTrip.tripDate,
+        tripDate: newTrip.trip_date,
         availableSeats: newTrip.vehicle_type === 'limousine' ? 34 : 36,
-        routeId: newTrip.routeId,
+        routeId: newTrip.route_id,
         vehicle_type: newTrip.vehicle_type,
         price: newTrip.price,
       };
@@ -169,12 +168,22 @@ const TripManagement: React.FC = () => {
 
   try {
     const res = await consolidateTrip(trip1.id, trip2.id);
+    console.log(res);
     if (res.success) {
-      setModalMessage({ text: 'Dồn chuyến đi thành công', type: 'success' });
-      setMergeTripModal({ show: false, tripId1: '', tripId2: '' });
-      setTimeout(() => setModalMessage(null), 1500);
-      fetchTrips();
+
       
+      // setTimeout(() => );
+
+      setModalMessage({ text: 'Dồn chuyến đi thành công', type: 'success' });
+
+      setTimeout(async () => {
+              setMergeTripModal({ show: false, tripId1: '', tripId2: '' });
+              await fetchTrips();
+              await fetchRoutes();
+            }, 1500);
+      setTimeout(() => setModalMessage(null), 2000);
+      
+
     }
 
   } catch (error) {
