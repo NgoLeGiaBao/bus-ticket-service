@@ -235,10 +235,9 @@ const BookingTicketForm = () => {
       tripId: tripID?.toString() || '',
       seatNumbers: selectedSeats,
       amount: price * selectedSeats.length,
-      pickupPoint: selectedPickup,
-      dropoffPoint: selectedDropoff,
+      pickUpPoint: selectedPickup,
+      dropOffPoint: selectedDropoff,
     };
-
     try {
       const res = await createBooking(bookingPayload);
       window.location.href = res.data.paymentUrl;

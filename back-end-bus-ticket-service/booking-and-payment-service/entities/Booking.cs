@@ -33,6 +33,11 @@ namespace booking_and_payment_service.models
         [RegularExpression(@"^(Pending|Booked|Cancelled|Late|Confirmed)$", ErrorMessage = "Status must be 'Pending', 'Confirmed', or 'Cancelled' or 'Late'")]
         public string Status { get; set; } = "Pending";
 
+        [Required(ErrorMessage = "Pick-up point is required")]
+        public string PickUpPoint { get; set; }
+
+        [Required(ErrorMessage = "Drop-off point is required")]
+        public string DropOffPoint { get; set; }
         public static string GenerateBookingId()
         {
             const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

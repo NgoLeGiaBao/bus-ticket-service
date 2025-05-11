@@ -5,6 +5,8 @@ export interface BookingRequest {
     tripId: string;
     seatNumbers: string[];
     amount: number;
+    pickUpPoint: string;
+    dropOffPoint: string;
   }
 
 export interface BookingResponse {

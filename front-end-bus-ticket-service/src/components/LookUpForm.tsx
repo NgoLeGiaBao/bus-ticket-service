@@ -1,11 +1,7 @@
-/** @format */
-
 import { useState, useEffect } from 'react';
 import LookUpResult from './LookUpResult';
-import axios from 'axios';
 import FailureNotification from './FailureNotification';
 import { lookupTicket } from '../services/apiServices';
-import { se } from './../../node_modules/date-fns/locale/se';
 
 interface Ticket {
   id?: string;
@@ -48,6 +44,9 @@ function LookUpForm() {
         paymentStatus: ticketData.payment.status,
         ticketId: ticketData.booking.id,
         licensePlate: ticketData.trip.licensePlate,
+        seatNumbers: ticketData.booking.seatNumbers,
+        pickUpPoint: ticketData.booking.pickUpPoint,
+        dropOffPoint: ticketData.booking.dropOffPoint
       };
       setTicket(ticket);
     } catch (error: any) {

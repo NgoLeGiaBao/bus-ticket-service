@@ -82,7 +82,9 @@ namespace booking_and_payment_service.services
                     TripId = dto.TripId,
                     SeatNumbers = dto.SeatNumbers,
                     BookingTime = DateTime.UtcNow,
-                    Status = bookingBy == "customer" ? "Pending" : "Booked"
+                    Status = bookingBy == "customer" ? "Pending" : "Booked",
+                    PickUpPoint = dto.PickUpPoint,
+                    DropOffPoint = dto.DropOffPoint
                 };
                 _context.Bookings.Add(booking);
                 await _context.SaveChangesAsync();
@@ -359,7 +361,6 @@ namespace booking_and_payment_service.services
                 }
 
                 var data = tripResponse.Data;
-                Console.WriteLine(data.ToString());
                 tripDto = new TripLookupDto
                 {
                     TripDate = data.GetProperty("trip_date").GetDateTime(),

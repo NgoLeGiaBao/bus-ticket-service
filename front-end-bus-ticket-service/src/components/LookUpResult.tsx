@@ -11,6 +11,10 @@ interface Ticket {
   paymentStatus: string;
   ticketId: string;
   licensePlate: string;
+  seatNumbers: string[];
+  pickUpPoint: string;
+  dropOffPoint: string;
+  
 }
 
 interface LookUpResultProps {
@@ -91,8 +95,11 @@ function LookUpResult({ ticket }: LookUpResultProps) {
             <div className="space-y-3">
               <InfoRow label="Tuyến xe" value={`${ticket.origin} → ${ticket.destination}`} />
               <InfoRow label="Thời gian khởi hành" value={formatDate(ticket.tripDate)} />
+              <InfoRow label="Số ghế" value={(ticket?.seatNumbers ?? []).join(', ')} />
               <InfoRow label="Biển số xe" value={ticket.licensePlate || 'Chưa xác định'} />
               <InfoRow label="Mã vé" value={ticket.ticketId} />
+              <InfoRow label="Điểm đón" value={ticket.pickUpPoint} />
+              <InfoRow label="Điểm xuống xe" value={ticket.dropOffPoint} />
             </div>
           </div>
           
