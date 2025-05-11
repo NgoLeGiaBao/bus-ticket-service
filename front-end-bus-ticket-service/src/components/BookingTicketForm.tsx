@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { createBooking, getTripById } from '../services/apiServices';
+import { createBooking, getAllRoutes, getTripById } from '../services/apiServices';
 import { useSelector } from 'react-redux';
 import FailureNotification from './FailureNotification';
 import SeatItem from './SeatItem';
 import { BookingRequest } from '../interfaces/Reservation';
+import dayjs from './../../node_modules/dayjs/esm/index';
+
 
 const BookingTicketForm = () => {
   const [searchParams] = useSearchParams();
@@ -29,6 +31,7 @@ const BookingTicketForm = () => {
   const [dropoffPoints, setDropoffPoints] = useState<string[]>([]);
   const [selectedPickup, setSelectedPickup] = useState('');
   const [selectedDropoff, setSelectedDropoff] = useState('');
+  
 
   // User data
   const user = useSelector((state: any) => state.user.account);
@@ -66,23 +69,73 @@ const BookingTicketForm = () => {
       setOrigin(res.data.routes.origin);
       setDestination(res.data.routes.destination);
       
-      // Mock pickup and dropoff points - in a real app, these would come from API
-      setPickupPoints([
-        res.data.routes.origin,
-        'Trạm trung chuyển 1',
-        'Trạm trung chuyển 2'
-      ]);
-      setDropoffPoints([
-        res.data.routes.destination,
-        'Trạm trung chuyển 3',
-        'Trạm trung chuyển 4'
-      ]);
-      setSelectedPickup(res.data.routes.origin);
-      setSelectedDropoff(res.data.routes.destination);
-    } catch (error) {
-      console.error('Error fetching trip:', error);
-    }
-  };
+      
+  // Lấy danh sách tất cả các tuyến đường
+      const res_routes = await getAllRoutes();
+      const allRoutes = res_routes?.data || [];
+
+      const selectedRoute = res.data?.routes;
+      if (!selectedRoute) {
+        console.error("Không tìm thấy route đã chọn");
+        return;
+      }
+
+      const selectedRouteFullInfo = allRoutes.find(route => route.id === selectedRoute.id);
+      if (!selectedRouteFullInfo) {
+        console.error("Không tìm thấy thông tin đầy đủ của tuyến được chọn");
+        return;
+      }
+
+      const subrouteInfoList = selectedRouteFullInfo.subroutes?.map(subroute => ({
+        id: subroute.relatedrouteid,
+        sortorder: subroute.sortorder || 0
+      })) || [];
+
+      subrouteInfoList.sort((a, b) => a.sortorder - b.sortorder);
+
+      const subroutes = subrouteInfoList
+        .map(info => allRoutes.find(route => route.id === info.id))
+        .filter(Boolean);
+
+      const parentDepartureTime = dayjs(res.data.trip_date); // giờ khởi hành tuyến chính
+      const parentDuration = parseInt(selectedRoute.duration);
+      const parentArrivalTime = parentDepartureTime.add(parentDuration, 'hour');
+
+      let pickupPoints: string[] = [];
+      let dropoffPoints: string[] = [];
+
+      // Xử lý subroute đảo ngược (từ gần đích về điểm đầu)
+      for (const subroute of [...subroutes].reverse()) {
+        const subDuration = parseInt(subroute.duration);
+        const timeDe = parentDuration - subDuration;
+      
+        const departureTime = parentDepartureTime.add(timeDe, 'hour');
+        const arrivalTime = departureTime.add(subDuration, 'hour');
+      
+        pickupPoints.unshift(`${subroute.origin} - ${departureTime.format('HH:mm')}`);
+        dropoffPoints.unshift(`${subroute.destination} - ${arrivalTime.format('HH:mm')}`);
+      }
+
+      // Thêm tuyến chính
+      pickupPoints.push(`${selectedRoute.origin} - ${parentDepartureTime.format('HH:mm')}`);
+      dropoffPoints.push(`${selectedRoute.destination} - ${parentArrivalTime.format('HH:mm')}`);
+
+      // Loại bỏ trùng lặp
+      pickupPoints = [...new Set(pickupPoints)];
+      dropoffPoints = [...new Set(dropoffPoints)];
+
+      setPickupPoints(pickupPoints);
+      setDropoffPoints(dropoffPoints);
+
+      // Mặc định chọn tuyến chính
+      setSelectedPickup(`${selectedRoute.origin} - ${parentDepartureTime.format('HH:mm')}`);
+      setSelectedDropoff(`${selectedRoute.destination} - ${parentArrivalTime.format('HH:mm')}`);
+      } catch (error) {
+        console.error('Error fetching trip:', error);
+      }
+    };
+
+  
 
   // Handle seat selection
   const handleSeatSelect = (seatCode: any) => {
@@ -554,3 +607,5 @@ const BookingTicketForm = () => {
 };
 
 export default BookingTicketForm;
+
+
