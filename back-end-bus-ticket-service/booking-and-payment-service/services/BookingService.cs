@@ -335,6 +335,73 @@ namespace booking_and_payment_service.services
             }
         }
 
+        // Consolidate Trip Async
+        public async Task<ApiResponse<string>> ConsolidateTripAsync(string oldTripId, string newTripId)
+        {
+            var bookingsToMove = await _context.Bookings
+                .Where(b => b.TripId == oldTripId && b.Status == "Booked")
+                .ToListAsync();
+        
+            var tripBBookedSeats = await _context.Bookings
+                .Where(b => b.TripId == newTripId && b.Status == "Booked")
+                .SelectMany(b => b.SeatNumbers)
+                .ToListAsync();
+        
+            var allSeats = Enumerable.Range(1, 17).Select(i => $"A{i:D2}")
+                          .Concat(Enumerable.Range(1, 17).Select(i => $"B{i:D2}"))
+                          .ToList();
+        
+            var availableSeats = allSeats.Except(tripBBookedSeats).ToList();
+        
+            var oldSeats = new List<string>();
+            var newSeats = new List<string>();
+        
+            foreach (var booking in bookingsToMove)
+            {
+                var updatedSeatList = new List<string>();
+        
+                foreach (var seat in booking.SeatNumbers)
+                {
+                    string targetSeat;
+        
+                    if (!tripBBookedSeats.Contains(seat))
+                    {
+                        targetSeat = seat;
+                    }
+                    else
+                    {
+                        if (availableSeats.Count == 0)
+                            return new ApiResponse<string>(false, "Không còn ghế trống", null, "NoAvailableSeat");
+        
+                        targetSeat = availableSeats.First();
+                        availableSeats.RemoveAt(0);
+                    }
+        
+                    oldSeats.Add(seat);
+                    newSeats.Add(targetSeat);
+                    updatedSeatList.Add(targetSeat);
+                }
+        
+                booking.TripId = newTripId;
+                booking.SeatNumbers = updatedSeatList;
+            }
+        
+            await _context.SaveChangesAsync();
+        
+            var bookingChangedEvent = new
+            {
+                OldTripId = oldTripId,
+                NewTripId = newTripId,
+                OldSeatNumbers = oldSeats,
+                NewSeatNumbers = newSeats
+            };
+        
+            _messagePublisher.Publish("booking.route.changed", JsonConvert.SerializeObject(bookingChangedEvent));
+        
+            return new ApiResponse<string>(true, "Trip consolidated successfully", null, null);
+        }
+
+
         // Lookup ticket by phone and booking id
         public async Task<ApiResponse<TicketInfo>> LookupTicketAsync(string phoneNumber, string bookingId)
         {

@@ -108,6 +108,17 @@ namespace booking_and_payment_service.controllers
             var result = await _bookingService.GetAllTicketsAsync();
             return Ok(result);
         }
+        
+        [HttpPut("consolidate")]
+        public async Task<IActionResult> ConsolidateTrip([FromQuery] string oldTripId, [FromQuery] string newTripId)
+        {
+            var result = await _bookingService.ConsolidateTripAsync(oldTripId, newTripId);
+            // if (!result.IsSuccess)
+            // {
+            //     return BadRequest(result);
+            // }
 
+            return Ok(result);
+        }
     }
 }

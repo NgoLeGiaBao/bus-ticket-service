@@ -349,6 +349,21 @@ export const updatePaymentStatusSuccess = async (bookingId: string) => {
   }
 };
 
+// Consolidate Trip
+export const consolidateTrip = async (oldTripId: string, newTripId: string) => {
+  try {
+    const response = await axios.put(`/reservations/bookings/consolidate`, null, {
+      params: {
+        oldTripId,
+        newTripId
+      }
+    });    return { success: true, data: response.data };
+  } catch (error: any) {
+    console.error('Consolidate trip failed:', error);
+    return { success: false, error: error.response?.data || error.message };
+  }
+}
+
 
 //-- Staff Dispatch Assignments APIs
 // Get all staff routes

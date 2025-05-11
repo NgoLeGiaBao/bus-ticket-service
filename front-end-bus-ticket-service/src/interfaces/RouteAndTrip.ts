@@ -28,6 +28,7 @@ export interface Trip {
   vehicle_id?: string;
   license_plate?: string;
   routes: TripRoute;
+  status ?: string;
 }
 
 export interface RouteFormData {

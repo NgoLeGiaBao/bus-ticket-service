@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiMapPin, FiPlus, FiX } from 'react-icons/fi';
-import { createTrip, getAllRoutes, getAllTrips, updateTripStatus } from '../../services/apiServices';
+import { createTrip, getAllRoutes, getAllTrips, updateTripStatus, mergeTrips, consolidateTrip } from '../../services/apiServices';
 import { RouteFormData, Trip, TripFormData } from '../../interfaces/RouteAndTrip';
 
 const TripManagement: React.FC = () => {
@@ -13,9 +13,9 @@ const TripManagement: React.FC = () => {
     vehicle: '',
   });
   const [newTrip, setNewTrip] = useState<Omit<TripFormData, 'id'>>({
-    trip_date: '',
-    available_seats: 0,
-    route_id: '',
+    tripDate: '',
+    availableSeats: 0,
+    routeId: '',
     vehicle_type: '',
     price: 0,
   });
@@ -25,6 +25,11 @@ const TripManagement: React.FC = () => {
     tripId: '',
     currentStatus: '',
     newStatus: 'ongoing' as 'ongoing' | 'completed' | 'cancelled',
+  });
+  const [mergeTripModal, setMergeTripModal] = useState({
+    show: false,
+    tripId1: '',
+    tripId2: '',
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [modalMessage, setModalMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
@@ -56,8 +61,8 @@ const TripManagement: React.FC = () => {
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!newTrip.route_id) newErrors.route_id = 'Vui lòng chọn tuyến đường';
-    if (!newTrip.trip_date) newErrors.trip_date = 'Vui lòng chọn thời gian đi';
+    if (!newTrip.routeId) newErrors.route_id = 'Vui lòng chọn tuyến đường';
+    if (!newTrip.tripDate) newErrors.trip_date = 'Vui lòng chọn thời gian đi';
     if (!newTrip.vehicle_type) newErrors.vehicle_type = 'Vui lòng chọn loại xe';
     if (newTrip.price <= 0) newErrors.price = 'Giá phải lớn hơn 0';
 
@@ -74,9 +79,9 @@ const TripManagement: React.FC = () => {
     try {
       const tripData: TripFormData = {
         id: '',
-        tripDate: newTrip.trip_date,
-        availableSeats: newTrip.vehicle_type === 'limousine' ? 34 : 36, // Configurable in a real app
-        routeId: newTrip.route_id,
+        tripDate: newTrip.tripDate,
+        availableSeats: newTrip.vehicle_type === 'limousine' ? 34 : 36,
+        routeId: newTrip.routeId,
         vehicle_type: newTrip.vehicle_type,
         price: newTrip.price,
       };
@@ -84,7 +89,7 @@ const TripManagement: React.FC = () => {
       await createTrip(tripData);
       setModalMessage({ text: 'Thêm chuyến đi thành công', type: 'success' });
       await fetchTrips();
-      setTimeout(resetForm, 1500); // Show success message before closing
+      setTimeout(resetForm, 1500);
     } catch (error) {
       setModalMessage({ text: 'Đã xảy ra lỗi khi thêm chuyến đi', type: 'error' });
     }
@@ -94,19 +99,88 @@ const TripManagement: React.FC = () => {
     try {
       await updateTripStatus(statusUpdateModal.tripId, statusUpdateModal.newStatus);
       await fetchTrips();
-      // setModalMessage({
-      //   text: `Cập nhật trạng thái chuyến đi thành công`,
-      //   type: 'success',
-      // });
       setStatusUpdateModal({ show: false, tripId: '', currentStatus: '', newStatus: 'ongoing' });
-      // setShowModal(true);
       setShowModal(false);
-
     } catch (error) {
       setModalMessage({ text: 'Không thể cập nhật trạng thái chuyến đi', type: 'error' });
       setShowModal(true);
     }
   };
+
+  const handleMergeTrips = async () => {
+  // Kiểm tra điều kiện trước khi merge/dồn chuyến
+  if (!mergeTripModal.tripId1 || !mergeTripModal.tripId2) {
+    setModalMessage({ text: 'Vui lòng chọn hai chuyến đi để dồn', type: 'error' });
+    return;
+  }
+
+  const trip1 = trips.find(t => t.id === mergeTripModal.tripId1);
+  const trip2 = trips.find(t => t.id === mergeTripModal.tripId2);
+  if (!trip1 || !trip2) {
+    setModalMessage({ text: 'Không tìm thấy thông tin chuyến đi', type: 'error' });
+    return;
+  }
+
+  // Kiểm tra trạng thái chuyến
+  if (trip1.status !== 'scheduled' || trip2.status !== 'scheduled') {
+    setModalMessage({ text: 'Chỉ có thể dồn các chuyến đang ở trạng thái "scheduled"', type: 'error' });
+    return;
+  }
+
+  // Kiểm tra loại xe
+  if (trip1.vehicle_type !== trip2.vehicle_type) {
+    setModalMessage({ text: 'Chỉ có thể dồn các chuyến cùng loại xe', type: 'error' });
+    return;
+  }
+
+  // Kiểm tra thời gian (cho phép chênh lệch tối đa 2 tiếng)
+  const timeDiff = Math.abs(new Date(trip1.trip_date).getTime() - new Date(trip2.trip_date).getTime());
+  if (timeDiff > 2 * 60 * 60 * 1000) {
+    setModalMessage({ text: 'Chỉ có thể dồn các chuyến cách nhau tối đa 2 tiếng', type: 'error' });
+    return;
+  }
+
+  // Kiểm tra quan hệ route (CHA-CON hoặc CÙNG TUYẾN)
+  const isTrip1Parent = findParentRoutes(trip2.route_id).includes(trip1.route_id);
+  const isTrip2Parent = findParentRoutes(trip1.route_id).includes(trip2.route_id);
+  const isSameRoute = trip1.route_id === trip2.route_id;
+
+  if (!(isTrip1Parent || isTrip2Parent || isSameRoute)) {
+    setModalMessage({
+      text: 'Không thể dồn chuyến: Chỉ có thể dồn chuyến con vào chuyến cha hoặc chuyến cùng tuyến',
+      type: 'error'
+    });
+    return;
+  }
+
+  // Kiểm tra số ghế (cho phép merge nếu 1 trong 2 chuyến chưa có ai đặt)
+  const bookedSeats1 = trip1.booked_seats?.length || 0;
+  const bookedSeats2 = trip2.booked_seats?.length || 0;
+  const totalBookedSeats = bookedSeats1 + bookedSeats2;
+  const vehicleCapacity = trip1.vehicle_type === 'limousine' ? 34 : 36;
+
+  if (totalBookedSeats > vehicleCapacity && bookedSeats1 > 0 && bookedSeats2 > 0) {
+    setModalMessage({
+      text: `Không thể dồn chuyến: Tổng số ghế đã đặt (${totalBookedSeats}) vượt quá sức chứa xe (${vehicleCapacity})`,
+      type: 'error'
+    });
+    return;
+  }
+
+  try {
+    const res = await consolidateTrip(trip1.id, trip2.id);
+    if (res.success) {
+      setModalMessage({ text: 'Dồn chuyến đi thành công', type: 'success' });
+      setMergeTripModal({ show: false, tripId1: '', tripId2: '' });
+      setTimeout(() => setModalMessage(null), 1500);
+      fetchTrips();
+      
+    }
+
+  } catch (error) {
+    setModalMessage({ text: 'Không thể dồn chuyến đi', type: 'error' });
+  }
+};
 
   const openStatusUpdateModal = (tripId: string, currentStatus: string) => {
     setStatusUpdateModal({
@@ -117,10 +191,18 @@ const TripManagement: React.FC = () => {
     });
   };
 
+  const openMergeTripModal = (tripId: string) => {
+    setMergeTripModal({
+      show: true,
+      tripId1: tripId,
+      tripId2: '',
+    });
+  };
+
   const resetForm = () => {
     setShowModal(false);
     setNewTrip({
-      trip_date: '',
+      tripDate: '',
       available_seats: 0,
       route_id: '',
       vehicle_type: '',
@@ -180,12 +262,112 @@ const TripManagement: React.FC = () => {
     }
   };
 
+  // Helper function to calculate available seats
+  const calculateAvailableSeats = (trip: Trip): number => {
+    const vehicleCapacity = trip.vehicle_type === 'limousine' ? 34 : 36;
+    const bookedSeats = trip.booked_seats?.length || 0;
+    return vehicleCapacity - bookedSeats;
+  };
+
+  // Helper function to find parent routes
+  const findParentRoutes = (routeId: string): string[] => {
+    const parentRoutes: string[] = [];
+    for (const route of routes) {
+      if (route.subroutes.some((sub) => sub.relatedrouteid === routeId && sub.isactive)) {
+        parentRoutes.push(route.id);
+      }
+    }
+    return parentRoutes;
+  };
+
+  // Helper function to find direct related routes (parent, child, or direct siblings only)
+  const findRelatedRoutes = (routeId: string): string[] => {
+    const relatedRoutes = new Set<string>([routeId]);
+
+    // Add direct parent routes
+    const parentRoutes = findParentRoutes(routeId);
+    parentRoutes.forEach((parentId) => relatedRoutes.add(parentId));
+
+    // Add direct sibling routes (only those sharing the same parent)
+    for (const route of routes) {
+      if (route.subroutes.some((sub) => sub.relatedrouteid === routeId && sub.isactive)) {
+        route.subroutes
+          .filter((sub) => sub.isactive && sub.relatedrouteid !== routeId)
+          .forEach((sub) => relatedRoutes.add(sub.relatedrouteid));
+      }
+    }
+
+    // Add direct child routes
+    const currentRoute = routes.find((r) => r.id === routeId);
+    if (currentRoute && currentRoute.subroutes) {
+      currentRoute.subroutes
+        .filter((sub) => sub.isactive)
+        .forEach((sub) => relatedRoutes.add(sub.relatedrouteid));
+    }
+
+    return Array.from(relatedRoutes);
+  };
+
+  // Check if two routes are directly mergeable (direct parent-child or siblings)
+  const areRoutesMergeable = (routeId1: string, routeId2: string): boolean => {
+    if (routeId1 === routeId2) return false; // Same route, not mergeable
+
+    // Check if one is a direct parent of the other
+    const parentOf1 = findParentRoutes(routeId1);
+    const parentOf2 = findParentRoutes(routeId2);
+    if (parentOf1.includes(routeId2) || parentOf2.includes(routeId1)) {
+      return true;
+    }
+
+    // Check if they are direct siblings (share the same parent)
+    const sharedParents = parentOf1.filter(parent => parentOf2.includes(parent));
+    return sharedParents.length > 0;
+  };
+
+  // Filter mergeable trips
+  const mergeableTrips = (tripId: string) => {
+    const selectedTrip = trips.find((t) => t.id === tripId);
+    if (!selectedTrip) return []; // Bỏ điều kiện booked_seats
+
+    const vehicleCapacity = selectedTrip.vehicle_type === 'limousine' ? 34 : 36;
+    const bookedSeatsSelected = selectedTrip.booked_seats?.length || 0;
+
+    return trips.filter((t) => {
+      if (
+        t.id === tripId || 
+        t.status !== 'scheduled' ||
+        selectedTrip.status !== 'scheduled' ||
+        t.vehicle_type !== selectedTrip.vehicle_type
+      ) {
+        return false;
+      }
+
+      // Kiểm tra thời gian (cách nhau ≤ 2 tiếng)
+      const timeDiff = Math.abs(
+        new Date(t.trip_date).getTime() - new Date(selectedTrip.trip_date).getTime()
+      );
+      if (timeDiff > 2 * 60 * 60 * 1000) return false;
+
+      // Tính tổng ghế đã đặt (nếu có)
+      const bookedSeatsOther = t.booked_seats?.length || 0;
+      const totalBookedSeats = bookedSeatsSelected + bookedSeatsOther;
+
+      // Điều kiện merge:
+      const isOtherParentOfSelected = findParentRoutes(selectedTrip.route_id).includes(t.route_id);
+      const isSameRoute = selectedTrip.route_id === t.route_id;
+
+      return (
+        (isOtherParentOfSelected || isSameRoute) &&
+        (totalBookedSeats <= vehicleCapacity || bookedSeatsOther === 0) // Cho phép merge nếu chuyến kia chưa có ai đặt
+      );
+    });
+  };
+
   return (
     <div className="rounded-lg border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
       {/* Header */}
       <div className="flex justify-between items-center border-b border-stroke py-6 px-4 md:px-6 xl:px-7.5 dark:border-strokedark">
         <div className="flex items-center space-x-3">
-          {/* <FiMapPin className="text-2xl text-primary" /> */}
           <h4 className="text-xl font-semibold text-black dark:text-white">Quản lý chuyến đi</h4>
         </div>
         <button
@@ -293,6 +475,9 @@ const TripManagement: React.FC = () => {
                     Loại xe
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                    Ghế đã đặt
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                     Ghế trống
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
@@ -322,7 +507,10 @@ const TripManagement: React.FC = () => {
                       {trip.vehicle_type === 'limousine' ? 'Limousine' : 'Giường nằm'}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                      {trip.available_seats}
+                      {trip.booked_seats?.length || 0}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      {calculateAvailableSeats(trip)}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                       {trip.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
@@ -337,7 +525,7 @@ const TripManagement: React.FC = () => {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-medium">
-                      <div className="flex justify-center">
+                      <div className="flex justify-center space-x-2">
                         <button
                           onClick={() => openStatusUpdateModal(trip.id, trip.status)}
                           className={`flex items-center text-amber-600 hover:text-amber-900 ${
@@ -349,6 +537,17 @@ const TripManagement: React.FC = () => {
                         >
                           Cập nhật
                         </button>
+<button
+  onClick={() => openMergeTripModal(trip.id)}
+  className={`flex items-center text-blue-600 hover:text-blue-900 ${
+    trip.status !== 'scheduled' || trip.booked_seats?.length === 0 
+      ? 'opacity-50 cursor-not-allowed' 
+      : ''
+  }`}
+  disabled={trip.status !== 'scheduled' || trip.booked_seats?.length === 0}
+>
+  Dồn chuyến
+</button>
                       </div>
                     </td>
                   </tr>
@@ -471,7 +670,7 @@ const TripManagement: React.FC = () => {
                 <button
                   onClick={resetForm}
                   type="button"
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-strokedark dark:text-gray-300 dark:hover:bg-meta-4"
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-strokedark dark:hover:bg-meta-4"
                 >
                   Hủy
                 </button>
@@ -547,7 +746,7 @@ const TripManagement: React.FC = () => {
                     })
                   }
                   type="button"
-                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-strokedark dark:text-gray-300 dark:hover:bg-meta-4"
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-strokedark dark:hover:bg-meta-4"
                 >
                   Hủy
                 </button>
@@ -557,6 +756,92 @@ const TripManagement: React.FC = () => {
                   className="rounded-md bg-primary px-4 py-2 text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
                 >
                   Xác nhận
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merge Trip Modal */}
+      {mergeTripModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 dark:bg-boxdark">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Dồn chuyến đi
+              </h3>
+              <button
+                onClick={() => setMergeTripModal({ show: false, tripId1: '', tripId2: '' })}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <FiX className="h-6 w-6" />
+              </button>
+            </div>
+
+            {modalMessage && (
+              <div
+                className={`mb-4 rounded p-3 text-sm ${
+                  modalMessage.type === 'error'
+                    ? 'bg-red-50 text-red-600 dark:bg-red-900 dark:bg-opacity-20 dark:text-red-300'
+                    : 'bg-green-50 text-green-600 dark:bg-green-900 dark:bg-opacity-20 dark:text-green-300'
+                }`}
+              >
+                {modalMessage.text}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Chuyến đi 1
+                </label>
+                <div className="rounded bg-gray-100 p-2 text-sm text-gray-700 dark:bg-meta-4 dark:text-gray-300">
+                  {trips.find(t => t.id === mergeTripModal.tripId1)?.routes.origin} → 
+                  {trips.find(t => t.id === mergeTripModal.tripId1)?.routes.destination} 
+                  ({new Date(trips.find(t => t.id === mergeTripModal.tripId1)?.trip_date || '').toLocaleString('vi-VN', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })}) 
+                  - {trips.find(t => t.id === mergeTripModal.tripId1)?.booked_seats?.length || 0} ghế đã đặt
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Chọn chuyến đi để dồn <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={mergeTripModal.tripId2}
+                  onChange={(e) => setMergeTripModal({ ...mergeTripModal, tripId2: e.target.value })}
+                  className="w-full rounded-lg border border-stroke bg-white py-2 px-3 text-sm focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                >
+                  <option value="">Chọn chuyến đi</option>
+                  {mergeableTrips(mergeTripModal.tripId1).map((trip) => (
+                    <option key={trip.id} value={trip.id}>
+                      {trip.routes.origin} → {trip.routes.destination} ({new Date(trip.trip_date).toLocaleString('vi-VN', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      })}) - {trip.booked_seats?.length || 0} ghế đã đặt
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setMergeTripModal({ show: false, tripId1: '', tripId2: '' })}
+                  type="button"
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-strokedark dark:hover:bg-meta-4"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleMergeTrips}
+                  type="button"
+                  className="rounded-md bg-primary px-4 py-2 text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
+                >
+                  Dồn chuyến
                 </button>
               </div>
             </div>
