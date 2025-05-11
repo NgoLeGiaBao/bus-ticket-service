@@ -105,21 +105,50 @@ const BookingTicketForm = () => {
       let dropoffPoints: string[] = [];
 
       // Process subroutes
+
       for (const subroute of [...subroutes].reverse()) {
         const subDuration = parseInt(subroute.duration);
         let timeDe = parentDuration - subDuration;
-        if (subroute.destination !== selectedRoute.destination) {
-          const findCommonSubroute = subroutes.find(
-            sub => sub.destination === selectedRoute.destination && sub.origin === subroute.origin
+
+        const sameOrigin = subroute.origin === selectedRoute.origin;
+        const sameDestination = subroute.destination === selectedRoute.destination;
+
+        // Trường hợp 1: Khác điểm đi và điểm đến
+        if (!sameOrigin && !sameDestination) {
+          const matchingSub = subroutes.find(
+            sub => sub.origin === selectedRoute.origin && sub.destination === subroute.destination
           );
         
-          if (findCommonSubroute) {
-            const timeRoute = parseInt(findCommonSubroute.duration) - subDuration;
-            timeDe = parentDuration - subDuration - timeRoute;
+          if (matchingSub) {
+            timeDe = parseInt(matchingSub.duration) - subDuration;
           } else {
-            timeDe = 0
+            const bridgeSub = subroutes.find(
+              sub => sub.origin === subroute.origin && sub.destination === selectedRoute.destination
+            );
+          
+            if (bridgeSub) {
+              const bridgeDuration = parseInt(bridgeSub.duration) - subDuration;
+              timeDe = parentDuration - subDuration - bridgeDuration;
+            } else {
+              timeDe = 0;
+            }
           }
-        } 
+        }
+      
+        // Trường hợp 2: Cùng điểm đi, khác điểm đến
+        else if (sameOrigin && !sameDestination) {
+          const extensionSub = subroutes.find(
+            sub => sub.origin === subroute.origin && sub.destination === selectedRoute.destination
+          );
+        
+          if (extensionSub) {
+            const extraDuration = parseInt(extensionSub.duration) - subDuration;
+            timeDe = parentDuration - subDuration - extraDuration;
+          } else {
+            timeDe = 0;
+          }
+        }
+        
         const departureTime = parentDepartureTime.add(timeDe, 'hour');
         const arrivalTime = departureTime.add(subDuration, 'hour');
 
@@ -144,7 +173,7 @@ const BookingTicketForm = () => {
       } catch (error) {
         console.error('Error fetching trip:', error);
       }
-    };
+  };
 
   
 
